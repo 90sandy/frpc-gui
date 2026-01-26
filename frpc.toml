@@ -1,9 +1,9 @@
-serverAddr = "162.14.77.110"
+serverAddr = "*"
 serverPort = 7000
 
 # 认证配置
 auth.method = "token"
-auth.token = "d4c2dc7262c3d97bcaf3c2d1201282e3"
+auth.token = "*"
 
 # 监控
 webServer.addr = "127.0.0.1"
