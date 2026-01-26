@@ -1,17 +1,19 @@
 import os
 import subprocess
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, messagebox
 from setting import check_frpc_config, show_settings_window, get_frpc_exe_path, load_frpc_toml
 from proxy import ProxyManager
+from log import LogManager
 import requests
+import threading
 
 
 class MainWindow:
     def __init__(self, root):
         self.root = root
         self.root.title("FRPC 客户端")
-        self.root.geometry("800x600")
+        self.root.geometry("840x600")
         
         # 居中显示窗口
         self.root.update_idletasks()
@@ -34,13 +36,15 @@ class MainWindow:
         # 初始化内容区域和进程对象（需要在 init_menu 之前初始化）
         self.current_page = None
         self.frpc_process = None  # FRPC 进程对象
-        self.auto_refresh_id = None  # 自动刷新定时器 ID
         
         # 初始化菜单
         self.init_menu()
         
         # 初始化代理管理器
         self.proxy_manager = ProxyManager(self.root, self.content_frame, self.refresh_proxy_callback)
+        
+        # 初始化日志管理器
+        self.log_manager = LogManager(self.root, self.content_frame)
         
         self.show_status_page()
         
@@ -92,8 +96,9 @@ class MainWindow:
     
     def clear_content(self):
         """清空右侧内容区域"""
-        # 停止自动刷新
-        self.stop_auto_refresh()
+        # 停止日志自动刷新
+        if hasattr(self, 'log_manager'):
+            self.log_manager.stop_auto_refresh()
         
         for widget in self.content_frame.winfo_children():
             widget.destroy()
@@ -129,6 +134,19 @@ class MainWindow:
             font=("Arial", 12)
         )
         self.status_label.pack(pady=10)
+        
+        # 加载进度条（初始隐藏）
+        self.progress_frame = ttk.Frame(info_frame)
+        self.progress_bar = ttk.Progressbar(
+            self.progress_frame,
+            mode='indeterminate',
+            length=200
+        )
+        self.progress_label = ttk.Label(
+            self.progress_frame,
+            text="处理中...",
+            font=("Arial", 10)
+        )
         
         # 按钮区域
         button_frame = ttk.Frame(status_frame)
@@ -182,136 +200,8 @@ class MainWindow:
         # 更新菜单按钮状态
         self.update_menu_highlight(2)
         
-        # 日志页面内容
-        log_frame = ttk.Frame(self.content_frame, padding="20")
-        log_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # 标题和按钮区域
-        header_frame = ttk.Frame(log_frame)
-        header_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        title_label = ttk.Label(
-            header_frame,
-            text="运行日志",
-            font=("Arial", 16, "bold")
-        )
-        title_label.pack(side=tk.LEFT)
-        
-        # 按钮区域（右侧）
-        button_frame = ttk.Frame(header_frame)
-        button_frame.pack(side=tk.RIGHT)
-        
-        # 清空按钮
-        clear_button = ttk.Button(
-            button_frame,
-            text="清空",
-            command=self.clear_log,
-            width=10
-        )
-        clear_button.pack(side=tk.LEFT, padx=(0, 10))
-        
-        # 刷新按钮
-        refresh_button = ttk.Button(
-            button_frame,
-            text="刷新",
-            command=self.refresh_log,
-            width=10
-        )
-        refresh_button.pack(side=tk.LEFT)
-        
-        # 日志显示区域
-        log_text_frame = ttk.LabelFrame(log_frame, text="日志内容", padding="10")
-        log_text_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # 使用 ScrolledText 显示日志
-        self.log_text = scrolledtext.ScrolledText(
-            log_text_frame,
-            wrap=tk.WORD,
-            font=("Consolas", 10),
-            bg="#1e1e1e",
-            fg="#d4d4d4",
-            insertbackground="#d4d4d4",
-            state=tk.DISABLED  # 只读模式
-        )
-        self.log_text.pack(fill=tk.BOTH, expand=True)
-        
-        # 初始加载日志
-        self.refresh_log()
-        
-        # 设置定时刷新（每2秒自动刷新一次）
-        self.auto_refresh_id = None
-        self.start_auto_refresh()
-    
-    def refresh_log(self):
-        """刷新日志内容"""
-        # 检查日志文本区域是否存在
-        if not hasattr(self, 'log_text') or self.log_text is None:
-            return
-        
-        log_file = 'frpc.log'
-        
-        try:
-            # 启用文本区域进行编辑
-            self.log_text.config(state=tk.NORMAL)
-            self.log_text.delete(1.0, tk.END)
-            
-            if os.path.exists(log_file):
-                try:
-                    with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
-                        content = f.read()
-                        self.log_text.insert(tk.END, content)
-                except Exception as e:
-                    self.log_text.insert(tk.END, f"读取日志文件失败: {str(e)}\n")
-            else:
-                self.log_text.insert(tk.END, "日志文件不存在: frpc.log\n")
-                self.log_text.insert(tk.END, "请确保 FRPC 服务已启动并配置了日志输出。\n")
-            
-            # 禁用文本区域（只读模式）
-            self.log_text.config(state=tk.DISABLED)
-            
-            # 自动滚动到底部
-            self.log_text.see(tk.END)
-        except Exception as e:
-            # 如果出错，尝试恢复只读状态
-            try:
-                self.log_text.config(state=tk.DISABLED)
-            except:
-                pass
-    
-    def clear_log(self):
-        """清空日志文件"""
-        log_file = 'frpc.log'
-        
-        # 确认对话框
-        if not messagebox.askyesno("确认", "确定要清空日志文件吗？"):
-            return
-        
-        try:
-            # 清空日志文件
-            if os.path.exists(log_file):
-                with open(log_file, 'w', encoding='utf-8') as f:
-                    f.write('')  # 写入空内容
-            
-            # 刷新显示
-            self.refresh_log()
-            
-            messagebox.showinfo("成功", "日志文件已清空")
-        except Exception as e:
-            messagebox.showerror("错误", f"清空日志文件失败：{str(e)}")
-    
-    def start_auto_refresh(self):
-        """启动自动刷新"""
-        # 只在日志页面时刷新
-        if hasattr(self, 'current_page') and self.current_page == "log":
-            self.refresh_log()
-            # 每2秒刷新一次
-            self.auto_refresh_id = self.root.after(2000, self.start_auto_refresh)
-    
-    def stop_auto_refresh(self):
-        """停止自动刷新"""
-        if self.auto_refresh_id:
-            self.root.after_cancel(self.auto_refresh_id)
-            self.auto_refresh_id = None
+        # 使用日志管理器显示日志页面
+        self.log_manager.show_log_page()
     
     def show_settings_page(self):
         """显示设置页面 - 打开设置窗口"""
@@ -398,82 +288,160 @@ class MainWindow:
             self.start_button.config(state=tk.NORMAL)
             self.stop_button.config(state=tk.DISABLED)
     
+    def show_loading(self, message="处理中..."):
+        """显示加载状态"""
+        if not hasattr(self, 'progress_frame') or self.progress_frame is None:
+            return
+        
+        self.progress_label.config(text=message)
+        self.progress_label.pack(side=tk.LEFT, padx=(0, 10))
+        self.progress_bar.pack(side=tk.LEFT)
+        self.progress_frame.pack(pady=10)
+        self.progress_bar.start(10)  # 开始动画
+        
+        # 禁用按钮
+        if hasattr(self, 'start_button'):
+            self.start_button.config(state=tk.DISABLED)
+        if hasattr(self, 'stop_button'):
+            self.stop_button.config(state=tk.DISABLED)
+    
+    def hide_loading(self):
+        """隐藏加载状态"""
+        if not hasattr(self, 'progress_frame') or self.progress_frame is None:
+            return
+        
+        self.progress_bar.stop()
+        self.progress_frame.pack_forget()
+    
     def start_frpc(self):
         """启动 FRPC 服务"""
-        try:
-            # 检查配置文件是否存在
-            if not os.path.exists('frpc.toml'):
-                messagebox.showerror("错误", "未找到 frpc.toml 配置文件")
+        # 检查配置文件是否存在
+        if not os.path.exists('frpc.toml'):
+            messagebox.showerror("错误", "未找到 frpc.toml 配置文件")
+            return
+        
+        # 获取 frpc.exe 路径
+        frpc_exe_path = get_frpc_exe_path()
+        if not frpc_exe_path or not os.path.exists(frpc_exe_path):
+            messagebox.showerror("错误", "未找到 frpc.exe 文件，请在设置中配置路径")
+            return
+        
+        # 检查进程是否已经在运行
+        if self.frpc_process is not None:
+            # 检查进程是否还在运行
+            if self.frpc_process.poll() is None:
+                messagebox.showwarning("提示", "FRPC 服务已在运行中")
                 return
-            
-            # 获取 frpc.exe 路径
-            frpc_exe_path = get_frpc_exe_path()
-            if not frpc_exe_path or not os.path.exists(frpc_exe_path):
-                messagebox.showerror("错误", "未找到 frpc.exe 文件，请在设置中配置路径")
-                return
-            
-            # 检查进程是否已经在运行
-            if self.frpc_process is not None:
-                # 检查进程是否还在运行
-                if self.frpc_process.poll() is None:
-                    messagebox.showwarning("提示", "FRPC 服务已在运行中")
-                    return
-                else:
-                    # 进程已结束，清理引用
-                    self.frpc_process = None
-            
-            # 检查是否有其他 frpc 进程在运行（通过 API 检测）
-            if self.check_frpc_service_by_api():
-                messagebox.showwarning("提示", "FRPC 服务已在运行中（可能是外部启动的）")
-                # 更新 UI 状态
-                self.update_status_ui()
-                self.update_proxy_menu_state()
-                return
-            
-            # 启动 FRPC 进程
-            # 使用 subprocess.Popen 启动，不显示控制台窗口
-            self.frpc_process = subprocess.Popen(
-                [frpc_exe_path, '-c', 'frpc.toml'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-            )
-            
-            # 更新 UI
-            self.status_label.config(text="状态: 运行中")
-            self.start_button.config(state=tk.DISABLED)
-            self.stop_button.config(state=tk.NORMAL)
-            
-            # 启用代理菜单按钮
-            self.update_proxy_menu_state()
-            
-            messagebox.showinfo("成功", "FRPC 服务已启动")
-            
-        except Exception as e:
-            messagebox.showerror("错误", f"启动 FRPC 服务失败：{str(e)}")
-            if self.frpc_process:
+            else:
+                # 进程已结束，清理引用
                 self.frpc_process = None
-            self.status_label.config(text="状态: 启动失败")
-            self.start_button.config(state=tk.NORMAL)
-            self.stop_button.config(state=tk.DISABLED)
-            
-            # 禁用代理菜单按钮
+        
+        # 检查是否有其他 frpc 进程在运行（通过 API 检测）
+        if self.check_frpc_service_by_api():
+            messagebox.showwarning("提示", "FRPC 服务已在运行中（可能是外部启动的）")
+            # 更新 UI 状态
+            self.update_status_ui()
             self.update_proxy_menu_state()
+            return
+        
+        # 显示加载状态
+        self.show_loading("正在启动服务...")
+        
+        # 在后台线程中启动服务
+        def start_thread():
+            try:
+                # 启动 FRPC 进程
+                # 使用 subprocess.Popen 启动，不显示控制台窗口
+                self.frpc_process = subprocess.Popen(
+                    [frpc_exe_path, '-c', 'frpc.toml'],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                )
+                
+                # 等待一小段时间，确保进程启动
+                import time
+                time.sleep(0.5)
+                
+                # 检查进程是否成功启动
+                if self.frpc_process.poll() is not None:
+                    # 进程已退出，启动失败
+                    error_msg = "服务启动失败"
+                    try:
+                        _, stderr = self.frpc_process.communicate(timeout=1)
+                        if stderr:
+                            error_msg = stderr.decode('utf-8', errors='ignore')[:200]
+                    except:
+                        pass
+                    
+                    self.root.after(0, lambda: self._start_failed(error_msg))
+                    return
+                
+                # 更新 UI（在主线程中执行）
+                self.root.after(0, lambda: self._start_success())
+                
+            except Exception as e:
+                self.root.after(0, lambda: self._start_failed(str(e)))
+        
+        # 启动后台线程
+        thread = threading.Thread(target=start_thread, daemon=True)
+        thread.start()
+    
+    def _start_success(self):
+        """启动成功的回调"""
+        self.hide_loading()
+        
+        # 更新 UI
+        self.status_label.config(text="状态: 运行中")
+        self.start_button.config(state=tk.DISABLED)
+        self.stop_button.config(state=tk.NORMAL)
+        
+        # 启用代理菜单按钮
+        self.update_proxy_menu_state()
+        
+        messagebox.showinfo("成功", "FRPC 服务已启动")
+    
+    def _start_failed(self, error_msg):
+        """启动失败的回调"""
+        self.hide_loading()
+        
+        if self.frpc_process:
+            self.frpc_process = None
+        
+        self.status_label.config(text="状态: 启动失败")
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+        
+        # 禁用代理菜单按钮
+        self.update_proxy_menu_state()
+        
+        messagebox.showerror("错误", f"启动 FRPC 服务失败：{error_msg}")
     
     def stop_frpc(self):
         """停止 FRPC 服务"""
-        try:
-            # 检查是否是我们启动的进程
-            if self.frpc_process is None:
-                # 检查是否有外部启动的进程
-                if self.check_frpc_service_by_api():
-                    messagebox.showwarning("提示", "FRPC 服务正在运行，但该进程不是由此程序启动的，无法通过此程序停止。\n请手动停止该进程。")
-                else:
-                    messagebox.showwarning("提示", "FRPC 服务未运行")
-                return
-            
-            # 检查进程是否还在运行
-            if self.frpc_process.poll() is None:
+        # 检查是否是我们启动的进程
+        if self.frpc_process is None:
+            # 检查是否有外部启动的进程
+            if self.check_frpc_service_by_api():
+                messagebox.showwarning("提示", "FRPC 服务正在运行，但该进程不是由此程序启动的，无法通过此程序停止。\n请手动停止该进程。")
+            else:
+                messagebox.showwarning("提示", "FRPC 服务未运行")
+            return
+        
+        # 检查进程是否还在运行
+        if self.frpc_process.poll() is not None:
+            # 进程已经结束
+            self.frpc_process = None
+            self.update_status_ui()
+            self.update_proxy_menu_state()
+            return
+        
+        # 显示加载状态
+        self.show_loading("正在停止服务...")
+        
+        # 在后台线程中停止服务
+        def stop_thread():
+            try:
                 # 进程还在运行，终止它
                 self.frpc_process.terminate()
                 
@@ -484,46 +452,62 @@ class MainWindow:
                     # 如果进程没有响应，强制杀死
                     self.frpc_process.kill()
                     self.frpc_process.wait()
-            else:
-                # 进程已经结束
-                pass
-            
-            # 清理进程引用
-            self.frpc_process = None
-            
-            # 更新 UI
-            self.status_label.config(text="状态: 已停止")
-            self.start_button.config(state=tk.NORMAL)
-            self.stop_button.config(state=tk.DISABLED)
-            
-            # 禁用代理菜单按钮
-            self.update_proxy_menu_state()
-            
-            # 如果当前在代理页面，切换回服务页面
-            if self.current_page == "proxy":
-                self.show_status_page()
-            
-            messagebox.showinfo("成功", "FRPC 服务已停止")
-            
-        except Exception as e:
-            messagebox.showerror("错误", f"停止 FRPC 服务失败：{str(e)}")
-            # 即使出错也清理引用
-            self.frpc_process = None
-            self.status_label.config(text="状态: 已停止")
-            self.start_button.config(state=tk.NORMAL)
-            self.stop_button.config(state=tk.DISABLED)
-            
-            # 禁用代理菜单按钮
-            self.update_proxy_menu_state()
-            
-            # 如果当前在代理页面，切换回服务页面
-            if self.current_page == "proxy":
-                self.show_status_page()
+                
+                # 清理进程引用
+                self.frpc_process = None
+                
+                # 更新 UI（在主线程中执行）
+                self.root.after(0, lambda: self._stop_success())
+                
+            except Exception as e:
+                # 即使出错也清理引用
+                self.frpc_process = None
+                self.root.after(0, lambda: self._stop_failed(str(e)))
+        
+        # 启动后台线程
+        thread = threading.Thread(target=stop_thread, daemon=True)
+        thread.start()
+    
+    def _stop_success(self):
+        """停止成功的回调"""
+        self.hide_loading()
+        
+        # 更新 UI
+        self.status_label.config(text="状态: 已停止")
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+        
+        # 禁用代理菜单按钮
+        self.update_proxy_menu_state()
+        
+        # 如果当前在代理页面，切换回服务页面
+        if self.current_page == "proxy":
+            self.show_status_page()
+        
+        messagebox.showinfo("成功", "FRPC 服务已停止")
+    
+    def _stop_failed(self, error_msg):
+        """停止失败的回调"""
+        self.hide_loading()
+        
+        self.status_label.config(text="状态: 已停止")
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+        
+        # 禁用代理菜单按钮
+        self.update_proxy_menu_state()
+        
+        # 如果当前在代理页面，切换回服务页面
+        if self.current_page == "proxy":
+            self.show_status_page()
+        
+        messagebox.showerror("错误", f"停止 FRPC 服务失败：{error_msg}")
     
     def on_closing(self):
         """窗口关闭时的处理"""
-        # 停止自动刷新
-        self.stop_auto_refresh()
+        # 停止日志自动刷新
+        if hasattr(self, 'log_manager'):
+            self.log_manager.stop_auto_refresh()
         
         # 如果进程还在运行，先停止它
         if self.frpc_process is not None and self.frpc_process.poll() is None:
