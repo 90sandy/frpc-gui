@@ -20,6 +20,7 @@ enabled = true
 localIP = "127.0.0.1"
 localPort = 7896
 remotePort = 7800
+annotations=xxxx
 
 [[proxies]]
 name = "4234"

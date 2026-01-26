@@ -30,13 +30,13 @@ class MainWindow:
         self.content_frame = ttk.Frame(main_container)
         main_container.add(self.content_frame, weight=1)
         
-        # 初始化菜单
-        self.init_menu()
-        
-        # 初始化内容区域
+        # 初始化内容区域和进程对象（需要在 init_menu 之前初始化）
         self.current_page = None
         self.frpc_process = None  # FRPC 进程对象
         self.auto_refresh_id = None  # 自动刷新定时器 ID
+        
+        # 初始化菜单
+        self.init_menu()
         
         # 初始化代理管理器
         self.proxy_manager = ProxyManager(self.root, self.content_frame, self.refresh_proxy_callback)
@@ -148,6 +148,9 @@ class MainWindow:
             state=tk.DISABLED
         )
         self.stop_button.pack(side=tk.LEFT, padx=10)
+        
+        # 根据实际服务状态更新 UI
+        self.update_status_ui()
     
     def show_proxy_page(self):
         """显示代理页面"""
@@ -190,14 +193,27 @@ class MainWindow:
         )
         title_label.pack(side=tk.LEFT)
         
+        # 按钮区域（右侧）
+        button_frame = ttk.Frame(header_frame)
+        button_frame.pack(side=tk.RIGHT)
+        
+        # 清空按钮
+        clear_button = ttk.Button(
+            button_frame,
+            text="清空",
+            command=self.clear_log,
+            width=10
+        )
+        clear_button.pack(side=tk.LEFT, padx=(0, 10))
+        
         # 刷新按钮
         refresh_button = ttk.Button(
-            header_frame,
+            button_frame,
             text="刷新",
             command=self.refresh_log,
             width=10
         )
-        refresh_button.pack(side=tk.RIGHT, padx=(10, 0))
+        refresh_button.pack(side=tk.LEFT)
         
         # 日志显示区域
         log_text_frame = ttk.LabelFrame(log_frame, text="日志内容", padding="10")
@@ -258,6 +274,27 @@ class MainWindow:
             except:
                 pass
     
+    def clear_log(self):
+        """清空日志文件"""
+        log_file = 'frpc.log'
+        
+        # 确认对话框
+        if not messagebox.askyesno("确认", "确定要清空日志文件吗？"):
+            return
+        
+        try:
+            # 清空日志文件
+            if os.path.exists(log_file):
+                with open(log_file, 'w', encoding='utf-8') as f:
+                    f.write('')  # 写入空内容
+            
+            # 刷新显示
+            self.refresh_log()
+            
+            messagebox.showinfo("成功", "日志文件已清空")
+        except Exception as e:
+            messagebox.showerror("错误", f"清空日志文件失败：{str(e)}")
+    
     def start_auto_refresh(self):
         """启动自动刷新"""
         # 只在日志页面时刷新
@@ -302,6 +339,20 @@ class MainWindow:
                 proxy_button.config(state=tk.NORMAL)
             else:
                 proxy_button.config(state=tk.DISABLED)
+    
+    def update_status_ui(self):
+        """根据实际服务状态更新状态页面的 UI"""
+        if not hasattr(self, 'status_label') or self.status_label is None:
+            return
+        
+        if self.is_service_running():
+            self.status_label.config(text="状态: 运行中")
+            self.start_button.config(state=tk.DISABLED)
+            self.stop_button.config(state=tk.NORMAL)
+        else:
+            self.status_label.config(text="状态: 未启动")
+            self.start_button.config(state=tk.NORMAL)
+            self.stop_button.config(state=tk.DISABLED)
     
     def start_frpc(self):
         """启动 FRPC 服务"""
@@ -353,6 +404,9 @@ class MainWindow:
             self.status_label.config(text="状态: 启动失败")
             self.start_button.config(state=tk.NORMAL)
             self.stop_button.config(state=tk.DISABLED)
+            
+            # 禁用代理菜单按钮
+            self.update_proxy_menu_state()
     
     def stop_frpc(self):
         """停止 FRPC 服务"""
@@ -401,6 +455,13 @@ class MainWindow:
             self.status_label.config(text="状态: 已停止")
             self.start_button.config(state=tk.NORMAL)
             self.stop_button.config(state=tk.DISABLED)
+            
+            # 禁用代理菜单按钮
+            self.update_proxy_menu_state()
+            
+            # 如果当前在代理页面，切换回服务页面
+            if self.current_page == "proxy":
+                self.show_status_page()
     
     def on_closing(self):
         """窗口关闭时的处理"""

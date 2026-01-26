@@ -521,6 +521,9 @@ def show_settings_window(parent=None):
             root.destroy()
             if parent:
                 parent.attributes('-disabled', False)
+                parent.deiconify()  # 如果窗口被最小化，先恢复窗口
+                parent.lift()  # 将父窗口提升到最前面
+                parent.focus_set()  # 让父窗口获得焦点
         except Exception as e:
             messagebox.showerror("错误", f"生成配置文件失败：{str(e)}")
     
@@ -529,6 +532,9 @@ def show_settings_window(parent=None):
         root.destroy()
         if parent:
             parent.attributes('-disabled', False)
+            parent.deiconify()  # 如果窗口被最小化，先恢复窗口
+            parent.lift()  # 将父窗口提升到最前面
+            parent.focus_set()  # 让父窗口获得焦点
     
     # 按钮框架
     button_frame = ttk.Frame(frame)
