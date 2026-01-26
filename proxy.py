@@ -1,0 +1,512 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+from setting import load_frpc_toml, generate_frpc_toml, validate_ip_address, validate_port, get_port_range
+from config import get_proxy_status, write_config_file, read_frpc_toml_content
+
+
+def generate_frpc_toml_with_proxies(server_addr, server_port, token=None, web_addr="127.0.0.1", web_port=7400, log_level="info", proxies=None):
+    """
+    生成包含代理配置的完整 frpc.toml 文件
+    
+    参数:
+        server_addr: 服务器地址
+        server_port: 服务器端口
+        token: 认证 token（可选）
+        web_addr: Web 服务地址
+        web_port: Web 服务端口
+        log_level: 日志级别
+        proxies: 代理配置列表
+    """
+    # 生成基础配置
+    config_content = f'''serverAddr = "{server_addr}"
+serverPort = {server_port}
+
+# 认证配置
+auth.method = "token"
+'''
+    
+    if token:
+        config_content += f'auth.token = "{token}"\n'
+    else:
+        config_content += '# auth.token = ""\n'
+    
+    config_content += f'''
+# 监控
+webServer.addr = "{web_addr}"
+webServer.port = {web_port}
+
+# 日志配置
+log.to = "frpc.log"
+log.level = "{log_level}"
+'''
+    
+    # 添加代理配置
+    if proxies:
+        for proxy in proxies:
+            config_content += '\n[[proxies]]\n'
+            config_content += f'name = "{proxy.get("name", "")}"\n'
+            config_content += f'type = "{proxy.get("type", "")}"\n'
+            
+            # enabled (默认 true)
+            if 'enabled' in proxy:
+                config_content += f'enabled = {str(proxy["enabled"]).lower()}\n'
+            
+            # localIP
+            if 'localIP' in proxy:
+                config_content += f'localIP = "{proxy["localIP"]}"\n'
+            
+            # localPort
+            if 'localPort' in proxy:
+                config_content += f'localPort = {proxy["localPort"]}\n'
+            
+            # remotePort
+            if 'remotePort' in proxy:
+                config_content += f'remotePort = {proxy["remotePort"]}\n'
+            
+            # subdomain
+            if 'subdomain' in proxy:
+                config_content += f'subdomain = "{proxy["subdomain"]}"\n'
+            
+            # customDomains
+            if 'customDomains' in proxy and proxy['customDomains']:
+                domains = proxy['customDomains']
+                if isinstance(domains, list):
+                    domains_str = ', '.join([f'"{d}"' for d in domains])
+                    config_content += f'customDomains = [{domains_str}]\n'
+                else:
+                    config_content += f'customDomains = ["{domains}"]\n'
+            
+            # annotations (map[string]string)
+            if 'annotations' in proxy and proxy['annotations']:
+                for key, value in proxy['annotations'].items():
+                    config_content += f'annotations.{key} = "{value}"\n'
+    
+    with open('frpc.toml', 'w', encoding='utf-8') as f:
+        f.write(config_content)
+    
+    return True
+
+
+class ProxyManager:
+    """代理管理类"""
+    
+    def __init__(self, parent_window, content_frame, refresh_callback=None):
+        """
+        初始化代理管理器
+        
+        参数:
+            parent_window: 父窗口
+            content_frame: 内容框架
+            refresh_callback: 刷新回调函数
+        """
+        self.parent_window = parent_window
+        self.content_frame = content_frame
+        self.refresh_callback = refresh_callback
+        self.proxy_tree = None
+    
+    def show_proxy_page(self):
+        """显示代理页面"""
+        # 清空内容区域
+        for widget in self.content_frame.winfo_children():
+            widget.destroy()
+        
+        # 代理页面内容
+        proxy_frame = ttk.Frame(self.content_frame, padding="20")
+        proxy_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 标题和按钮区域
+        header_frame = ttk.Frame(proxy_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        title_label = ttk.Label(
+            header_frame,
+            text="代理配置",
+            font=("Arial", 16, "bold")
+        )
+        title_label.pack(side=tk.LEFT)
+        
+        # 刷新按钮
+        refresh_button = ttk.Button(
+            header_frame,
+            text="刷新",
+            command=self.refresh_proxy_list,
+            width=10
+        )
+        refresh_button.pack(side=tk.RIGHT, padx=(10, 0))
+        
+        # 新增按钮
+        add_button = ttk.Button(
+            header_frame,
+            text="新增",
+            command=self.add_proxy,
+            width=10
+        )
+        add_button.pack(side=tk.RIGHT, padx=(10, 0))
+        
+        # 代理列表区域
+        list_frame = ttk.LabelFrame(proxy_frame, text="代理列表", padding="10")
+        list_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 创建 Treeview 显示代理列表
+        columns = ('name', 'type', 'status', 'local_addr', 'remote_addr')
+        self.proxy_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=10)
+        
+        # 设置列标题和宽度
+        self.proxy_tree.heading('name', text='名称')
+        self.proxy_tree.heading('type', text='类型')
+        self.proxy_tree.heading('status', text='状态')
+        self.proxy_tree.heading('local_addr', text='本地地址')
+        self.proxy_tree.heading('remote_addr', text='远程地址')
+        
+        self.proxy_tree.column('name', width=120)
+        self.proxy_tree.column('type', width=80)
+        self.proxy_tree.column('status', width=100)
+        self.proxy_tree.column('local_addr', width=150)
+        self.proxy_tree.column('remote_addr', width=150)
+        
+        # 滚动条
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.proxy_tree.yview)
+        self.proxy_tree.configure(yscrollcommand=scrollbar.set)
+        
+        self.proxy_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 绑定双击事件编辑代理
+        self.proxy_tree.bind('<Double-1>', self.edit_proxy)
+        
+        # 初始加载代理列表
+        self.refresh_proxy_list()
+    
+    def refresh_proxy_list(self):
+        """刷新代理列表"""
+        if not self.proxy_tree:
+            return
+        
+        # 清空现有列表
+        for item in self.proxy_tree.get_children():
+            self.proxy_tree.delete(item)
+        
+        # 从 status 接口加载代理列表
+        status = get_proxy_status()
+        
+        if 'error' in status:
+            self.proxy_tree.insert('', tk.END, values=('', '', status['error'], '', ''))
+            return
+        
+        # 遍历所有类型的代理
+        proxy_count = 0
+        for proxy_type, proxy_list in status.items():
+            if isinstance(proxy_list, list):
+                for proxy in proxy_list:
+                    name = proxy.get('name', '')
+                    ptype = proxy.get('type', proxy_type)
+                    status_text = proxy.get('status', 'unknown')
+                    local_addr = proxy.get('local_addr', '')
+                    remote_addr = proxy.get('remote_addr', '')
+                    
+                    self.proxy_tree.insert('', tk.END, values=(name, ptype, status_text, local_addr, remote_addr), tags=(name,))
+                    proxy_count += 1
+        
+        if proxy_count == 0:
+            self.proxy_tree.insert('', tk.END, values=('', '', '暂无代理', '', ''))
+    
+    def add_proxy(self):
+        """新增代理"""
+        self.show_proxy_edit_dialog()
+    
+    def edit_proxy(self, event=None):
+        """编辑代理"""
+        if not self.proxy_tree:
+            return
+        
+        selection = self.proxy_tree.selection()
+        if not selection:
+            return
+        
+        item = self.proxy_tree.item(selection[0])
+        proxy_name = item['values'][0] if item['values'] else None
+        
+        if not proxy_name:
+            return
+        
+        # 从配置文件中读取代理信息
+        config = load_frpc_toml()
+        proxy_data = None
+        
+        if config and 'proxies' in config:
+            for proxy in config['proxies']:
+                if proxy.get('name') == proxy_name:
+                    proxy_data = proxy
+                    break
+        
+        self.show_proxy_edit_dialog(proxy_data)
+    
+    def show_proxy_edit_dialog(self, proxy_data=None):
+        """显示代理编辑对话框"""
+        dialog = tk.Toplevel(self.parent_window)
+        dialog.title("编辑代理" if proxy_data else "新增代理")
+        dialog.geometry("500x450")
+        dialog.resizable(False, False)
+        dialog.transient(self.parent_window)
+        dialog.grab_set()
+        
+        # 居中显示
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+        
+        frame = ttk.Frame(dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 代理名称
+        ttk.Label(frame, text="名称:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        name_entry = ttk.Entry(frame, width=30)
+        if proxy_data:
+            name_entry.insert(0, proxy_data.get('name', ''))
+            name_entry.config(state=tk.DISABLED)  # 编辑时名称不可修改
+        name_entry.grid(row=0, column=1, pady=5, padx=10)
+        
+        # 代理类型
+        ttk.Label(frame, text="类型:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        type_combo = ttk.Combobox(frame, width=27, state="readonly")
+        type_combo['values'] = ('tcp', 'udp', 'http', 'https', 'tcpmux', 'stcp', 'sudp', 'xtcp')
+        if proxy_data:
+            type_combo.set(proxy_data.get('type', 'tcp'))
+        else:
+            type_combo.set('tcp')
+        type_combo.grid(row=1, column=1, pady=5, padx=10, sticky=tk.W)
+        
+        # 是否启用
+        ttk.Label(frame, text="启用:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        enabled_var = tk.BooleanVar()
+        enabled_var.set(proxy_data.get('enabled', True) if proxy_data else True)
+        enabled_check = ttk.Checkbutton(frame, variable=enabled_var)
+        enabled_check.grid(row=2, column=1, pady=5, padx=10, sticky=tk.W)
+        
+        # 本地IP
+        ttk.Label(frame, text="本地IP:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        local_ip_entry = ttk.Entry(frame, width=30)
+        if proxy_data and 'localIP' in proxy_data:
+            local_ip_entry.insert(0, proxy_data['localIP'])
+        local_ip_entry.grid(row=3, column=1, pady=5, padx=10)
+        
+        # 本地端口
+        ttk.Label(frame, text="本地端口:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        local_port_entry = ttk.Entry(frame, width=30)
+        if proxy_data and 'localPort' in proxy_data:
+            local_port_entry.insert(0, str(proxy_data['localPort']))
+        local_port_entry.grid(row=4, column=1, pady=5, padx=10)
+        
+        # 远程端口（用于 tcp/udp）
+        remote_port_label = ttk.Label(frame, text="远程端口:")
+        remote_port_entry = ttk.Entry(frame, width=30)
+        if proxy_data and 'remotePort' in proxy_data:
+            remote_port_entry.insert(0, str(proxy_data['remotePort']))
+        
+        # 子域名（用于 http/https/tcpmux）
+        subdomain_label = ttk.Label(frame, text="子域名:")
+        subdomain_entry = ttk.Entry(frame, width=30)
+        if proxy_data and 'subdomain' in proxy_data:
+            subdomain_entry.insert(0, proxy_data['subdomain'])
+        
+        # 自定义域名（用于 http/https/tcpmux）
+        custom_domains_label = ttk.Label(frame, text="自定义域名(逗号分隔):")
+        custom_domains_entry = ttk.Entry(frame, width=30)
+        if proxy_data and 'customDomains' in proxy_data:
+            if isinstance(proxy_data['customDomains'], list):
+                custom_domains_entry.insert(0, ','.join(proxy_data['customDomains']))
+            else:
+                custom_domains_entry.insert(0, str(proxy_data['customDomains']))
+        
+        # 按钮框架（先创建，位置会动态调整）
+        button_frame = ttk.Frame(frame)
+        
+        def update_fields_by_type(*args):
+            """根据类型更新字段显示"""
+            ptype = type_combo.get()
+            
+            # 隐藏所有可选字段
+            remote_port_label.grid_remove()
+            remote_port_entry.grid_remove()
+            subdomain_label.grid_remove()
+            subdomain_entry.grid_remove()
+            custom_domains_label.grid_remove()
+            custom_domains_entry.grid_remove()
+            
+            # 根据类型显示相应字段
+            if ptype in ['tcp', 'udp']:
+                # tcp/udp 需要远程端口
+                remote_port_label.grid(row=5, column=0, sticky=tk.W, pady=5)
+                remote_port_entry.grid(row=5, column=1, pady=5, padx=10)
+                button_frame.grid(row=6, column=0, columnspan=2, pady=20)
+            elif ptype in ['http', 'https', 'tcpmux']:
+                # http/https/tcpmux 需要子域名或自定义域名
+                subdomain_label.grid(row=5, column=0, sticky=tk.W, pady=5)
+                subdomain_entry.grid(row=5, column=1, pady=5, padx=10)
+                custom_domains_label.grid(row=6, column=0, sticky=tk.W, pady=5)
+                custom_domains_entry.grid(row=6, column=1, pady=5, padx=10)
+                button_frame.grid(row=7, column=0, columnspan=2, pady=20)
+            else:
+                # stcp, sudp, xtcp 不需要额外字段
+                button_frame.grid(row=5, column=0, columnspan=2, pady=20)
+        
+        # 绑定类型变化事件
+        type_combo.bind('<<ComboboxSelected>>', update_fields_by_type)
+        
+        # 初始显示字段
+        if proxy_data:
+            update_fields_by_type()
+        else:
+            # 默认显示 tcp 的字段
+            remote_port_label.grid(row=5, column=0, sticky=tk.W, pady=5)
+            remote_port_entry.grid(row=5, column=1, pady=5, padx=10)
+            button_frame.grid(row=6, column=0, columnspan=2, pady=20)
+        
+        def save_proxy():
+            """保存代理配置"""
+            name = name_entry.get().strip()
+            ptype = type_combo.get().strip()
+            enabled = enabled_var.get()
+            local_ip = local_ip_entry.get().strip()
+            local_port = local_port_entry.get().strip()
+            
+            # 验证必填项
+            if not name:
+                messagebox.showerror("错误", "请输入代理名称")
+                return
+            
+            if not ptype:
+                messagebox.showerror("错误", "请选择代理类型")
+                return
+            
+            if not local_ip:
+                messagebox.showerror("错误", "请输入本地IP")
+                return
+            
+            # 校验本地 IP
+            if not validate_ip_address(local_ip):
+                messagebox.showerror("错误", "本地 IP 格式不正确，请输入有效的 IPv4 地址")
+                return
+            
+            if not local_port:
+                messagebox.showerror("错误", "请输入本地端口")
+                return
+            
+            # 校验本地端口（1-65535）
+            is_valid, local_port_int = validate_port(local_port, 1, 65535)
+            if not is_valid:
+                messagebox.showerror("错误", "本地端口必须在 1-65535 之间")
+                return
+            
+            # 构建代理配置
+            new_proxy = {
+                'name': name,
+                'type': ptype,
+                'enabled': enabled,
+                'localIP': local_ip,
+                'localPort': local_port_int
+            }
+            
+            # 根据类型验证和添加特定字段
+            if ptype in ['tcp', 'udp']:
+                # tcp/udp 需要远程端口
+                remote_port = remote_port_entry.get().strip()
+                if not remote_port:
+                    messagebox.showerror("错误", "请输入远程端口")
+                    return
+                
+                # 获取端口范围配置
+                min_port, max_port = get_port_range()
+                
+                # 校验远程端口是否在配置的范围内
+                is_valid, remote_port_int = validate_port(remote_port, min_port, max_port)
+                if not is_valid:
+                    messagebox.showerror("错误", f"远程端口必须在 {min_port}-{max_port} 之间（服务器端口范围）")
+                    return
+                
+                new_proxy['remotePort'] = remote_port_int
+            elif ptype in ['http', 'https', 'tcpmux']:
+                # http/https/tcpmux 需要子域名或自定义域名（二选一）
+                subdomain = subdomain_entry.get().strip()
+                custom_domains = custom_domains_entry.get().strip()
+                
+                if not subdomain and not custom_domains:
+                    messagebox.showerror("错误", "请输入子域名或自定义域名（至少填写一个）")
+                    return
+                
+                if subdomain:
+                    new_proxy['subdomain'] = subdomain
+                
+                if custom_domains:
+                    # 将逗号分隔的字符串转换为列表
+                    domains_list = [d.strip() for d in custom_domains.split(',') if d.strip()]
+                    if domains_list:
+                        new_proxy['customDomains'] = domains_list
+            # stcp, sudp, xtcp 不需要额外字段
+            
+            # 读取现有配置
+            config = load_frpc_toml()
+            if not config:
+                messagebox.showerror("错误", "无法读取配置文件")
+                dialog.destroy()
+                return
+            
+            # 更新或添加代理
+            if 'proxies' not in config:
+                config['proxies'] = []
+            
+            # 如果是编辑，先删除旧配置
+            if proxy_data:
+                config['proxies'] = [p for p in config['proxies'] if p.get('name') != name]
+            
+            # 检查名称是否已存在
+            if any(p.get('name') == name for p in config['proxies']):
+                messagebox.showerror("错误", f"代理名称 '{name}' 已存在")
+                return
+            
+            # 添加新代理
+            config['proxies'].append(new_proxy)
+            
+            # 生成完整配置并写入
+            try:
+                # 使用 generate_frpc_toml_with_proxies 生成包含代理的完整配置
+                generate_frpc_toml_with_proxies(
+                    config['server_addr'],
+                    int(config['server_port']),
+                    config.get('token'),
+                    config.get('web_addr', '127.0.0.1'),
+                    int(config.get('web_port', 7400)),
+                    config.get('log_level', 'info'),
+                    config.get('proxies', [])
+                )
+                
+                # 通过 API 写入配置
+                new_content = read_frpc_toml_content()
+                result = write_config_file(new_content, auto_reload=True)
+                
+                if 'error' in result:
+                    messagebox.showerror("错误", f"写入配置失败: {result['error']}")
+                elif 'reload_error' in result:
+                    # 配置写入成功，但重载失败
+                    error_msg = f"配置已保存，但重载失败:\n{result['reload_error']}"
+                    if result.get('reload_response'):
+                        error_msg += f"\n\n详细信息: {result['reload_response']}"
+                    messagebox.showerror("重载失败", error_msg)
+                    dialog.destroy()
+                    self.refresh_proxy_list()
+                else:
+                    messagebox.showinfo("成功", result.get('message', '代理配置已保存并重载'))
+                    dialog.destroy()
+                    self.refresh_proxy_list()
+            except Exception as e:
+                messagebox.showerror("错误", f"保存配置失败: {str(e)}")
+        
+        # 按钮已在 update_fields_by_type 中创建和定位
+        save_button = ttk.Button(button_frame, text="保存", command=save_proxy)
+        save_button.pack(side=tk.LEFT, padx=10)
+        
+        cancel_button = ttk.Button(button_frame, text="取消", command=dialog.destroy)
+        cancel_button.pack(side=tk.LEFT, padx=10)
+        
+        dialog.focus_set()
