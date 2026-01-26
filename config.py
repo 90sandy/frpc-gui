@@ -296,6 +296,8 @@ def get_proxy_status() -> Optional[Dict[str, Any]]:
         # 如果存在认证信息，使用 auth 参数
         auth = get_web_auth()
         response = requests.get(url, auth=auth, timeout=5)
+
+        print('查询代理列表：', response.status_code)
         
         if response.status_code == 200:
             return response.json()
