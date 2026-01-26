@@ -93,6 +93,8 @@ class MainWindow:
         
         # 初始化时，如果服务未启动，禁用代理菜单按钮
         self.update_proxy_menu_state()
+        # 初始化时，更新设置菜单按钮状态
+        self.update_settings_menu_state()
     
     def clear_content(self):
         """清空右侧内容区域"""
@@ -205,6 +207,11 @@ class MainWindow:
     
     def show_settings_page(self):
         """显示设置页面 - 打开设置窗口"""
+        # 检查服务是否正在运行
+        if self.is_service_running():
+            messagebox.showwarning("提示", "请先停止 FRPC 服务才能打开设置")
+            return
+        
         # 更新菜单按钮状态
         self.update_menu_highlight(3)
         
@@ -276,6 +283,8 @@ class MainWindow:
                 self.stop_button.config(state=tk.DISABLED)
         # 启用代理菜单
         self.update_proxy_menu_state()
+        # 禁用设置菜单（服务运行时）
+        self.update_settings_menu_state()
     
     def update_proxy_menu_state(self):
         """更新代理菜单按钮的启用/禁用状态"""
@@ -285,6 +294,15 @@ class MainWindow:
                 proxy_button.config(state=tk.NORMAL)
             else:
                 proxy_button.config(state=tk.DISABLED)
+    
+    def update_settings_menu_state(self):
+        """更新设置菜单按钮的启用/禁用状态"""
+        if len(self.menu_buttons) > 3:
+            settings_button = self.menu_buttons[3]  # 设置按钮是第四个（索引为3）
+            if self.is_service_running():
+                settings_button.config(state=tk.DISABLED)
+            else:
+                settings_button.config(state=tk.NORMAL)
     
     def update_status_ui(self):
         """根据实际服务状态更新状态页面的 UI"""
@@ -354,6 +372,7 @@ class MainWindow:
             # 更新 UI 状态
             self.update_status_ui()
             self.update_proxy_menu_state()
+            self.update_settings_menu_state()
             return
         
         # 显示加载状态
@@ -410,6 +429,8 @@ class MainWindow:
         
         # 启用代理菜单按钮
         self.update_proxy_menu_state()
+        # 禁用设置菜单按钮（服务运行时）
+        self.update_settings_menu_state()
         
         messagebox.showinfo("成功", "FRPC 服务已启动")
     
@@ -426,6 +447,8 @@ class MainWindow:
         
         # 禁用代理菜单按钮
         self.update_proxy_menu_state()
+        # 启用设置菜单按钮（服务未运行时）
+        self.update_settings_menu_state()
         
         messagebox.showerror("错误", f"启动 FRPC 服务失败：{error_msg}")
     
@@ -446,6 +469,7 @@ class MainWindow:
             self.frpc_process = None
             self.update_status_ui()
             self.update_proxy_menu_state()
+            self.update_settings_menu_state()
             return
         
         # 显示加载状态
@@ -491,6 +515,8 @@ class MainWindow:
         
         # 禁用代理菜单按钮
         self.update_proxy_menu_state()
+        # 启用设置菜单按钮（服务停止后）
+        self.update_settings_menu_state()
         
         # 如果当前在代理页面，切换回服务页面
         if self.current_page == "proxy":
@@ -508,6 +534,8 @@ class MainWindow:
         
         # 禁用代理菜单按钮
         self.update_proxy_menu_state()
+        # 启用设置菜单按钮（服务停止后）
+        self.update_settings_menu_state()
         
         # 如果当前在代理页面，切换回服务页面
         if self.current_page == "proxy":
