@@ -73,6 +73,16 @@ def save_port_range(min_port, max_port):
         json.dump(config, f, ensure_ascii=False, indent=2)
 
 
+def get_web_auth():
+    """从 frpc.toml 获取 Web 服务认证信息"""
+    config = load_frpc_toml()
+    if config:
+        username = config.get('web_user', '')
+        password = config.get('web_password', '')
+        return username, password
+    return '', ''
+
+
 def validate_ip_address(ip):
     """
     验证 IP 地址格式
@@ -153,6 +163,16 @@ def load_frpc_toml():
         match = re.search(r'webServer\.port\s*=\s*(\d+)', content)
         if match:
             config['web_port'] = match.group(1)
+        
+        # 解析 webServer.user
+        match = re.search(r'webServer\.user\s*=\s*"([^"]+)"', content)
+        if match:
+            config['web_user'] = match.group(1)
+        
+        # 解析 webServer.password
+        match = re.search(r'webServer\.password\s*=\s*"([^"]+)"', content)
+        if match:
+            config['web_password'] = match.group(1)
         
         # 解析 log.to
         match = re.search(r'log\.to\s*=\s*"([^"]+)"', content)
@@ -239,10 +259,20 @@ def load_frpc_toml():
         return None
 
 
-def generate_frpc_toml(server_addr, server_port, token=None, web_addr="127.0.0.1", web_port=7400, log_level="info"):
+def generate_frpc_toml(server_addr, server_port, token=None, web_addr="127.0.0.1", web_port=7400, log_level="info", web_user=None, web_password=None):
     """
     根据用户输入生成 frpc.toml 基础配置文件
     只生成基础配置，保留现有的代理配置
+    
+    参数:
+        server_addr: 服务器地址
+        server_port: 服务器端口
+        token: 认证 token（可选）
+        web_addr: Web 服务地址
+        web_port: Web 服务端口
+        log_level: 日志级别
+        web_user: Web 服务用户名（可选）
+        web_password: Web 服务密码（可选）
     """
     # 读取现有配置文件，提取代理配置部分
     existing_proxies_content = ""
@@ -276,7 +306,14 @@ auth.method = "token"
 # 监控
 webServer.addr = "{web_addr}"
 webServer.port = {web_port}
-
+'''
+    
+    # 添加 Web 服务用户名和密码（如果提供）
+    if web_user and web_password:
+        config_content += f'webServer.user = "{web_user}"\n'
+        config_content += f'webServer.password = "{web_password}"\n'
+    
+    config_content += f'''
 # 日志配置
 log.to = "frpc.log"
 log.level = "{log_level}"
@@ -307,7 +344,7 @@ def show_settings_window(parent=None):
         root = tk.Tk()
     
     root.title("FRPC 配置设置")
-    root.geometry("500x520")
+    root.geometry("500x600")
     root.resizable(False, False)
     
     # 居中显示窗口
@@ -364,20 +401,34 @@ def show_settings_window(parent=None):
         web_port_entry.insert(0, "7400")
     web_port_entry.grid(row=4, column=1, pady=5, padx=10)
     
+    # Web 服务用户名（可选）
+    ttk.Label(frame, text="Web 服务用户名 (可选):").grid(row=5, column=0, sticky=tk.W, pady=5)
+    web_username_entry = ttk.Entry(frame, width=30)
+    if existing_config and 'web_user' in existing_config:
+        web_username_entry.insert(0, existing_config['web_user'])
+    web_username_entry.grid(row=5, column=1, pady=5, padx=10)
+    
+    # Web 服务密码（可选）
+    ttk.Label(frame, text="Web 服务密码 (可选):").grid(row=6, column=0, sticky=tk.W, pady=5)
+    web_password_entry = ttk.Entry(frame, width=30, show="*")
+    if existing_config and 'web_password' in existing_config:
+        web_password_entry.insert(0, existing_config['web_password'])
+    web_password_entry.grid(row=6, column=1, pady=5, padx=10)
+    
     # 日志等级
-    ttk.Label(frame, text="日志等级:").grid(row=5, column=0, sticky=tk.W, pady=5)
+    ttk.Label(frame, text="日志等级:").grid(row=7, column=0, sticky=tk.W, pady=5)
     log_level_combo = ttk.Combobox(frame, width=27, state="readonly")
     log_level_combo['values'] = ('trace', 'debug', 'info', 'warn', 'error')
     if existing_config and 'log_level' in existing_config:
         log_level_combo.set(existing_config['log_level'])
     else:
         log_level_combo.set('info')
-    log_level_combo.grid(row=5, column=1, pady=5, padx=10, sticky=tk.W)
+    log_level_combo.grid(row=7, column=1, pady=5, padx=10, sticky=tk.W)
     
     # 服务器端口范围
-    ttk.Label(frame, text="服务器端口范围:").grid(row=6, column=0, sticky=tk.W, pady=5)
+    ttk.Label(frame, text="服务器端口范围:").grid(row=8, column=0, sticky=tk.W, pady=5)
     port_range_frame = ttk.Frame(frame)
-    port_range_frame.grid(row=6, column=1, pady=5, padx=10, sticky=tk.W)
+    port_range_frame.grid(row=8, column=1, pady=5, padx=10, sticky=tk.W)
     
     # 加载已保存的端口范围
     saved_min_port, saved_max_port = get_port_range()
@@ -395,9 +446,9 @@ def show_settings_window(parent=None):
     ttk.Label(port_range_frame, text=" (1-65535)").pack(side=tk.LEFT, padx=(5, 0))
     
     # FRPC.exe 路径
-    ttk.Label(frame, text="FRPC.exe 路径:").grid(row=7, column=0, sticky=tk.W, pady=5)
+    ttk.Label(frame, text="FRPC.exe 路径:").grid(row=9, column=0, sticky=tk.W, pady=5)
     frpc_path_frame = ttk.Frame(frame)
-    frpc_path_frame.grid(row=7, column=1, pady=5, padx=10, sticky=tk.EW)
+    frpc_path_frame.grid(row=9, column=1, pady=5, padx=10, sticky=tk.EW)
     
     frpc_path_entry = ttk.Entry(frpc_path_frame, width=25)
     frpc_path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -427,6 +478,8 @@ def show_settings_window(parent=None):
         token = token_entry.get().strip()
         web_ip = web_ip_entry.get().strip()
         web_port = web_port_entry.get().strip()
+        web_username = web_username_entry.get().strip()
+        web_password = web_password_entry.get().strip()
         min_port_str = min_port_entry.get().strip()
         max_port_str = max_port_entry.get().strip()
         
@@ -488,6 +541,14 @@ def show_settings_window(parent=None):
             messagebox.showerror("错误", "Web 服务端口必须在 1-65535 之间")
             return
         
+        # 验证 Web 服务用户名和密码（如果填了其中一个，另一个必填）
+        if web_username and not web_password:
+            messagebox.showerror("错误", "如果填写了 Web 服务用户名，则必须填写密码")
+            return
+        if web_password and not web_username:
+            messagebox.showerror("错误", "如果填写了 Web 服务密码，则必须填写用户名")
+            return
+        
         # 获取 frpc.exe 路径
         frpc_exe_path = frpc_path_entry.get().strip()
         
@@ -504,7 +565,9 @@ def show_settings_window(parent=None):
                 token if token else None,
                 web_ip,
                 web_port_int,
-                log_level
+                log_level,
+                web_username if web_username else None,
+                web_password if web_password else None
             )
             
             # 保存 frpc.exe 路径
@@ -538,7 +601,7 @@ def show_settings_window(parent=None):
     
     # 按钮框架
     button_frame = ttk.Frame(frame)
-    button_frame.grid(row=8, column=0, columnspan=2, pady=20)
+    button_frame.grid(row=10, column=0, columnspan=2, pady=20)
     
     # 保存按钮
     save_button = ttk.Button(button_frame, text="保存", command=save_config)

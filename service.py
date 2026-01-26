@@ -2,7 +2,7 @@ import os
 import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
-from setting import check_frpc_config, show_settings_window, get_frpc_exe_path, load_frpc_toml
+from setting import check_frpc_config, show_settings_window, get_frpc_exe_path, load_frpc_toml, get_web_auth
 from proxy import ProxyManager
 from log import LogManager
 import requests
@@ -245,7 +245,9 @@ class MainWindow:
             
             # 尝试连接 status API
             url = f"{base_url}/api/status"
-            response = requests.get(url, timeout=2)
+            # 如果存在认证信息，使用 auth 参数
+            auth = get_web_auth()
+            response = requests.get(url, auth=auth, timeout=2)
             return response.status_code == 200
         except:
             return False

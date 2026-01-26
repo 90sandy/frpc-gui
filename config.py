@@ -1,7 +1,32 @@
 import os
 import re
 import requests
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
+
+
+def get_web_auth() -> Optional[Tuple[str, str]]:
+    """从 frpc.toml 中获取 Web 服务认证信息"""
+    if not os.path.exists('frpc.toml'):
+        return None
+    
+    try:
+        with open('frpc.toml', 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 解析 webServer.user
+        user_match = re.search(r'webServer\.user\s*=\s*"([^"]+)"', content)
+        # 解析 webServer.password
+        password_match = re.search(r'webServer\.password\s*=\s*"([^"]+)"', content)
+        
+        if user_match and password_match:
+            username = user_match.group(1)
+            password = password_match.group(1)
+            if username and password:
+                return (username, password)
+    except:
+        pass
+    
+    return None
 
 
 def get_base_url() -> Optional[str]:
@@ -47,9 +72,12 @@ def read_config_file() -> Optional[Dict[str, Any]]:
     
     try:
         url = f"{base_url}/api/config"
-        response = requests.get(url, timeout=5)
+        # 如果存在认证信息，使用 auth 参数
+        auth = get_web_auth()
+        response = requests.get(url, auth=auth, timeout=5)
         
         print('读取配置文件：', response.status_code)
+        print('用户名 密码：', auth)
         
         if response.status_code == 200:
             return response.json()
@@ -79,7 +107,9 @@ def reload_config() -> Optional[Dict[str, Any]]:
     
     try:
         url = f"{base_url}/api/reload"
-        response = requests.get(url, timeout=5)
+        # 如果存在认证信息，使用 auth 参数
+        auth = get_web_auth()
+        response = requests.get(url, auth=auth, timeout=5)
         
         print('重载配置文件：', response.status_code)
 
@@ -153,7 +183,9 @@ def write_config_file(config_data: str, auto_reload: bool = True) -> Optional[Di
         url = f"{base_url}/api/config"
         # 发送 TOML 格式的字符串，Content-Type 为 text/plain
         headers = {'Content-Type': 'text/plain; charset=utf-8'}
-        response = requests.put(url, data=config_data.encode('utf-8'), headers=headers, timeout=5)
+        # 如果存在认证信息，使用 auth 参数
+        auth = get_web_auth()
+        response = requests.put(url, data=config_data.encode('utf-8'), headers=headers, auth=auth, timeout=5)
 
         print('写入配置文件：', response.status_code)
         
@@ -215,7 +247,9 @@ def query_config(key: Optional[str] = None) -> Optional[Dict[str, Any]]:
         if key:
             params['key'] = key
         
-        response = requests.get(url, params=params, timeout=5)
+        # 如果存在认证信息，使用 auth 参数
+        auth = get_web_auth()
+        response = requests.get(url, params=params, auth=auth, timeout=5)
         print('查询配置文件：', response.status_code)
         if response.status_code == 200:
             return response.json()
@@ -259,7 +293,9 @@ def get_proxy_status() -> Optional[Dict[str, Any]]:
     
     try:
         url = f"{base_url}/api/status"
-        response = requests.get(url, timeout=5)
+        # 如果存在认证信息，使用 auth 参数
+        auth = get_web_auth()
+        response = requests.get(url, auth=auth, timeout=5)
         
         if response.status_code == 200:
             return response.json()

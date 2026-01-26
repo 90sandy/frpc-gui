@@ -8,6 +8,8 @@ auth.token = "d4c2dc7262c3d97bcaf3c2d1201282e3"
 # 监控
 webServer.addr = "127.0.0.1"
 webServer.port = 7400
+webServer.user = "admin"
+webServer.password = "admin123"
 
 # 日志配置
 log.to = "frpc.log"
@@ -20,3 +22,11 @@ enabled = true
 localIP = "192.168.1.11"
 localPort = 80
 remotePort = 7505
+
+[[proxies]]
+name = "test"
+type = "tcp"
+enabled = true
+localIP = "127.0.0.1"
+localPort = 7890
+remotePort = 7890
