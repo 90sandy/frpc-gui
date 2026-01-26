@@ -12,20 +12,3 @@ webServer.port = 7400
 # 日志配置
 log.to = "frpc.log"
 log.level = "info"
-
-[[proxies]]
-name = "test"
-type = "tcp"
-enabled = true
-localIP = "127.0.0.1"
-localPort = 7896
-remotePort = 7800
-annotations=xxxx
-
-[[proxies]]
-name = "4234"
-type = "tcp"
-enabled = true
-localIP = "127.0.0.1"
-localPort = 7890
-remotePort = 7600

@@ -143,6 +143,15 @@ class ProxyManager:
         )
         add_button.pack(side=tk.RIGHT, padx=(10, 0))
         
+        # 删除按钮
+        delete_button = ttk.Button(
+            header_frame,
+            text="删除",
+            command=self.delete_proxy,
+            width=10
+        )
+        delete_button.pack(side=tk.RIGHT, padx=(10, 0))
+        
         # 代理列表区域
         list_frame = ttk.LabelFrame(proxy_frame, text="代理列表", padding="10")
         list_frame.pack(fill=tk.BOTH, expand=True)
@@ -240,6 +249,83 @@ class ProxyManager:
                     break
         
         self.show_proxy_edit_dialog(proxy_data)
+    
+    def delete_proxy(self):
+        """删除代理"""
+        if not self.proxy_tree:
+            return
+        
+        # 获取选中的项
+        selection = self.proxy_tree.selection()
+        if not selection:
+            messagebox.showwarning("提示", "请先选择要删除的代理")
+            return
+        
+        # 获取代理名称
+        item = self.proxy_tree.item(selection[0])
+        proxy_name = item['values'][0] if item['values'] else None
+        
+        if not proxy_name:
+            messagebox.showwarning("提示", "无法获取代理名称")
+            return
+        
+        # 将代理名称转换为字符串（处理数字类型的 name）
+        proxy_name = str(proxy_name)
+        
+        # 确认删除
+        if not messagebox.askyesno("确认删除", f"确定要删除代理 '{proxy_name}' 吗？"):
+            return
+        
+        # 读取现有配置
+        config = load_frpc_toml()
+        if not config:
+            messagebox.showerror("错误", "无法读取配置文件")
+            return
+        
+        # 检查代理是否存在
+        if 'proxies' not in config or not config['proxies']:
+            messagebox.showwarning("提示", "没有可删除的代理")
+            return
+        
+        # 查找并删除代理（将配置中的 name 也转换为字符串进行比较）
+        original_count = len(config['proxies'])
+        config['proxies'] = [p for p in config['proxies'] if str(p.get('name', '')) != proxy_name]
+        
+        if len(config['proxies']) == original_count:
+            messagebox.showwarning("提示", f"未找到代理 '{proxy_name}'")
+            return
+        
+        # 生成完整配置并写入
+        try:
+            # 使用 generate_frpc_toml_with_proxies 生成包含代理的完整配置
+            generate_frpc_toml_with_proxies(
+                config['server_addr'],
+                int(config['server_port']),
+                config.get('token'),
+                config.get('web_addr', '127.0.0.1'),
+                int(config.get('web_port', 7400)),
+                config.get('log_level', 'info'),
+                config.get('proxies', [])
+            )
+            
+            # 通过 API 写入配置
+            new_content = read_frpc_toml_content()
+            result = write_config_file(new_content, auto_reload=True)
+            
+            if 'error' in result:
+                messagebox.showerror("错误", f"删除代理失败: {result['error']}")
+            elif 'reload_error' in result:
+                # 配置写入成功，但重载失败
+                error_msg = f"代理已删除，但重载失败:\n{result['reload_error']}"
+                if result.get('reload_response'):
+                    error_msg += f"\n\n详细信息: {result['reload_response']}"
+                messagebox.showerror("重载失败", error_msg)
+                self.refresh_proxy_list()
+            else:
+                messagebox.showinfo("成功", f"代理 '{proxy_name}' 已删除")
+                self.refresh_proxy_list()
+        except Exception as e:
+            messagebox.showerror("错误", f"删除代理失败: {str(e)}")
     
     def show_proxy_edit_dialog(self, proxy_data=None):
         """显示代理编辑对话框"""

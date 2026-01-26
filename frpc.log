@@ -31,3 +31,5 @@
 2026-01-26 12:11:30.934 [I] [client/admin_api.go:170] http response [/api/status]
 2026-01-26 12:11:40.325 [I] [client/admin_api.go:168] http request [/api/status]
 2026-01-26 12:11:40.325 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-26 12:19:32.836 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-26 12:22:19.199 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
