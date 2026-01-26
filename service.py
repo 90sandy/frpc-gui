@@ -48,8 +48,8 @@ class MainWindow:
         
         self.show_status_page()
         
-        # 延迟检测已运行的进程（等待 UI 创建完成）
-        self.root.after(100, self.detect_existing_frpc_process)
+        # 延迟检测已运行的进程（等待 UI 创建完成，在后台线程中执行避免阻塞）
+        self.root.after(100, lambda: self.detect_existing_frpc_process_async())
         
         # 绑定窗口关闭事件，确保进程被清理
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -243,29 +243,39 @@ class MainWindow:
             web_port = config.get('web_port', 7400)
             base_url = f"http://{web_addr}:{web_port}"
             
-            # 尝试连接 status API
+            # 尝试连接 status API，使用较短的超时时间避免阻塞
             url = f"{base_url}/api/status"
             # 如果存在认证信息，使用 auth 参数
             auth = get_web_auth()
-            response = requests.get(url, auth=auth, timeout=2)
+            response = requests.get(url, auth=auth, timeout=0.5)
             return response.status_code == 200
         except:
             return False
     
-    def detect_existing_frpc_process(self):
-        """检测是否已有 frpc 进程在运行"""
-        if self.check_frpc_service_by_api():
-            # 检测到服务在运行，更新 UI 状态
-            # 注意：不设置 self.frpc_process，因为不是我们启动的进程
-            if hasattr(self, 'status_label') and self.status_label:
-                self.status_label.config(text="状态: 运行中（外部启动）")
-                if hasattr(self, 'start_button') and self.start_button:
-                    self.start_button.config(state=tk.DISABLED)
-                if hasattr(self, 'stop_button') and self.stop_button:
-                    # 外部启动的进程无法通过我们的 stop 按钮停止
-                    self.stop_button.config(state=tk.DISABLED)
-            # 启用代理菜单
-            self.update_proxy_menu_state()
+    def detect_existing_frpc_process_async(self):
+        """异步检测是否已有 frpc 进程在运行（在后台线程中执行）"""
+        def check_thread():
+            if self.check_frpc_service_by_api():
+                # 检测到服务在运行，更新 UI 状态（在主线程中执行）
+                self.root.after(0, self._update_ui_for_external_process)
+        
+        # 在后台线程中执行检测，避免阻塞UI
+        thread = threading.Thread(target=check_thread, daemon=True)
+        thread.start()
+    
+    def _update_ui_for_external_process(self):
+        """更新UI以显示外部启动的进程"""
+        # 检测到服务在运行，更新 UI 状态
+        # 注意：不设置 self.frpc_process，因为不是我们启动的进程
+        if hasattr(self, 'status_label') and self.status_label:
+            self.status_label.config(text="状态: 运行中（外部启动）")
+            if hasattr(self, 'start_button') and self.start_button:
+                self.start_button.config(state=tk.DISABLED)
+            if hasattr(self, 'stop_button') and self.stop_button:
+                # 外部启动的进程无法通过我们的 stop 按钮停止
+                self.stop_button.config(state=tk.DISABLED)
+        # 启用代理菜单
+        self.update_proxy_menu_state()
     
     def update_proxy_menu_state(self):
         """更新代理菜单按钮的启用/禁用状态"""

@@ -122,3 +122,18 @@
 2026-01-26 17:04:50.072 [I] [client/admin_api.go:170] http response [/api/status]
 2026-01-26 17:04:51.306 [I] [client/admin_api.go:168] http request [/api/status]
 2026-01-26 17:04:51.306 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-26 17:05:23.626 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-26 17:05:23.626 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-26 17:05:23.637 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-26 17:05:23.637 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-26 17:05:23.746 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-26 17:05:23.746 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-26 17:05:23.749 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-26 17:05:23.749 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-26 17:07:40.176 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-26 17:07:40.184 [I] [client/service.go:331] try to connect to server...
+2026-01-26 17:07:40.184 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-26 17:07:40.207 [I] [client/service.go:323] [be4318e866a72e27] login to server success, get run id [be4318e866a72e27]
+2026-01-26 17:07:40.207 [I] [proxy/proxy_manager.go:180] [be4318e866a72e27] proxy added: [nginx test]
+2026-01-26 17:07:40.213 [I] [client/control.go:172] [be4318e866a72e27] [nginx] start proxy success
+2026-01-26 17:07:40.213 [I] [client/control.go:172] [be4318e866a72e27] [test] start proxy success
