@@ -12,3 +12,11 @@ webServer.port = 7400
 # 日志配置
 log.to = "frpc.log"
 log.level = "info"
+
+[[proxies]]
+name = "nginx"
+type = "tcp"
+enabled = true
+localIP = "192.168.1.11"
+localPort = 80
+remotePort = 7505
