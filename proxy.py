@@ -1,11 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from setting import load_frpc_toml, generate_frpc_toml, get_port_range
+from setting import load_frpc_toml, get_port_range, get_web_auth_from_json
 from config_api import get_proxy_status, write_config_file, read_frpc_toml_content
 from util import validate_ip_address, validate_port, center_window
 
 
-def generate_frpc_toml_with_proxies(server_addr, server_port, token=None, web_addr="127.0.0.1", web_port=7400, log_level="info", proxies=None):
+def generate_frpc_toml_with_proxies(server_addr, server_port, token=None, web_addr="127.0.0.1", web_port=7400, log_level="info", web_user=None, web_password=None, proxies=None):
     """
     生成包含代理配置的完整 frpc.toml 文件
     
@@ -16,6 +16,8 @@ def generate_frpc_toml_with_proxies(server_addr, server_port, token=None, web_ad
         web_addr: Web 服务地址
         web_port: Web 服务端口
         log_level: 日志级别
+        web_user: Web 服务用户名（可选）
+        web_password: Web 服务密码（可选）
         proxies: 代理配置列表
     """
     # 生成基础配置
@@ -35,7 +37,14 @@ auth.method = "token"
 # 监控
 webServer.addr = "{web_addr}"
 webServer.port = {web_port}
-
+'''
+    
+    # 添加 Web 服务用户名和密码（如果提供）
+    if web_user and web_password:
+        config_content += f'webServer.user = "{web_user}"\n'
+        config_content += f'webServer.password = "{web_password}"\n'
+    
+    config_content += f'''
 # 日志配置
 log.to = "frpc.log"
 log.level = "{log_level}"
@@ -298,6 +307,16 @@ class ProxyManager:
         
         # 生成完整配置并写入
         try:
+            # 优先从 frpc_config.json 读取 web 认证信息，如果没有则从 frpc.toml 读取
+            web_username, web_password = get_web_auth_from_json()
+            if not web_username or not web_password:
+                # 如果 JSON 中没有，尝试从 toml 配置中读取
+                web_user_from_toml = config.get('web_user', '')
+                web_password_from_toml = config.get('web_password', '')
+                if web_user_from_toml and web_password_from_toml:
+                    web_username = web_user_from_toml
+                    web_password = web_password_from_toml
+            
             # 使用 generate_frpc_toml_with_proxies 生成包含代理的完整配置
             generate_frpc_toml_with_proxies(
                 config['server_addr'],
@@ -306,6 +325,8 @@ class ProxyManager:
                 config.get('web_addr', '127.0.0.1'),
                 int(config.get('web_port', 7400)),
                 config.get('log_level', 'info'),
+                web_username if web_username else None,
+                web_password if web_password else None,
                 config.get('proxies', [])
             )
             
@@ -554,6 +575,16 @@ class ProxyManager:
             
             # 生成完整配置并写入
             try:
+                # 优先从 frpc_config.json 读取 web 认证信息，如果没有则从 frpc.toml 读取
+                web_username, web_password = get_web_auth_from_json()
+                if not web_username or not web_password:
+                    # 如果 JSON 中没有，尝试从 toml 配置中读取
+                    web_user_from_toml = config.get('web_user', '')
+                    web_password_from_toml = config.get('web_password', '')
+                    if web_user_from_toml and web_password_from_toml:
+                        web_username = web_user_from_toml
+                        web_password = web_password_from_toml
+                
                 # 使用 generate_frpc_toml_with_proxies 生成包含代理的完整配置
                 generate_frpc_toml_with_proxies(
                     config['server_addr'],
@@ -562,6 +593,8 @@ class ProxyManager:
                     config.get('web_addr', '127.0.0.1'),
                     int(config.get('web_port', 7400)),
                     config.get('log_level', 'info'),
+                    web_username if web_username else None,
+                    web_password if web_password else None,
                     config.get('proxies', [])
                 )
                 
