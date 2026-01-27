@@ -59,12 +59,6 @@ cd frpc-gui
 ### 2. 安装依赖
 
 ```bash
-pip install -r requirements.txt
-```
-
-如果没有 `requirements.txt`，需要安装以下依赖：
-
-```bash
 pip install requests
 ```
 
