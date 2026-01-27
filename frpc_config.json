@@ -1,7 +1,13 @@
 {
+  "server_addr": "127.0.0.1",
+  "server_port": 7000,
+  "token": "1234556789",
+  "web_addr": "127.0.0.1",
+  "web_port": 7400,
+  "web_username": "admin",
+  "web_password": "admin123",
+  "log_level": "info",
   "frpc_exe_path": "E:/frp_0.66.0_windows_amd64/frpc.exe",
-  "port_range_min": 7501,
-  "port_range_max": 65535,
-  "web_username": "",
-  "web_password": ""
+  "port_range_min": 1,
+  "port_range_max": 65535
 }

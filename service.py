@@ -2,10 +2,11 @@ import os
 import subprocess
 import tkinter as tk
 from tkinter import ttk, messagebox
-from setting import check_frpc_config, show_settings_window, get_frpc_exe_path, load_frpc_toml, get_web_auth
+from setting import check_frpc_config, show_settings_window, get_frpc_exe_path, load_frpc_toml
 from proxy import ProxyManager
 from log import LogManager
-import requests
+from util import center_window
+from config_api import check_frpc_service_status
 import threading
 
 
@@ -16,10 +17,7 @@ class MainWindow:
         self.root.geometry("840x600")
         
         # 居中显示窗口
-        self.root.update_idletasks()
-        x = (self.root.winfo_screenwidth() // 2) - (self.root.winfo_width() // 2)
-        y = (self.root.winfo_screenheight() // 2) - (self.root.winfo_height() // 2)
-        self.root.geometry(f"+{x}+{y}")
+        center_window(self.root)
         
         # 创建主容器
         main_container = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
@@ -237,32 +235,15 @@ class MainWindow:
                 self.frpc_process = None
         
         # 检查是否有其他 frpc 进程在运行（通过 API 检测）
-        return self.check_frpc_service_by_api()
+        status_code = check_frpc_service_status()
+        return status_code == 200
     
-    def check_frpc_service_by_api(self):
-        """通过 API 检测 frpc 服务是否在运行"""
-        try:
-            config = load_frpc_toml()
-            if not config:
-                return False
-            
-            web_addr = config.get('web_addr', '127.0.0.1')
-            web_port = config.get('web_port', 7400)
-            base_url = f"http://{web_addr}:{web_port}"
-            
-            # 尝试连接 status API，使用较短的超时时间避免阻塞
-            url = f"{base_url}/api/status"
-            # 如果存在认证信息，使用 auth 参数
-            auth = get_web_auth()
-            response = requests.get(url, auth=auth, timeout=0.5)
-            return response.status_code == 200
-        except:
-            return False
     
     def detect_existing_frpc_process_async(self):
         """异步检测是否已有 frpc 进程在运行（在后台线程中执行）"""
         def check_thread():
-            if self.check_frpc_service_by_api():
+            status_code = check_frpc_service_status()
+            if status_code == 200:
                 # 检测到服务在运行，更新 UI 状态（在主线程中执行）
                 self.root.after(0, self._update_ui_for_external_process)
         
@@ -367,7 +348,8 @@ class MainWindow:
                 self.frpc_process = None
         
         # 检查是否有其他 frpc 进程在运行（通过 API 检测）
-        if self.check_frpc_service_by_api():
+        status_code = check_frpc_service_status()
+        if status_code == 200:
             messagebox.showwarning("提示", "FRPC 服务已在运行中（可能是外部启动的）")
             # 更新 UI 状态
             self.update_status_ui()
@@ -457,7 +439,8 @@ class MainWindow:
         # 检查是否是我们启动的进程
         if self.frpc_process is None:
             # 检查是否有外部启动的进程
-            if self.check_frpc_service_by_api():
+            status_code = check_frpc_service_status()
+            if status_code == 200:
                 messagebox.showwarning("提示", "FRPC 服务正在运行，但该进程不是由此程序启动的，无法通过此程序停止。\n请手动停止该进程。")
             else:
                 messagebox.showwarning("提示", "FRPC 服务未运行")

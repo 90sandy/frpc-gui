@@ -1,9 +1,9 @@
-serverAddr = "*"
+serverAddr = "127.0.0.1"
 serverPort = 7000
 
 # 认证配置
 auth.method = "token"
-auth.token = "*"
+auth.token = "1234556789"
 
 # 监控
 webServer.addr = "127.0.0.1"
@@ -14,19 +14,3 @@ webServer.password = "admin123"
 # 日志配置
 log.to = "frpc.log"
 log.level = "info"
-
-[[proxies]]
-name = "nginx"
-type = "tcp"
-enabled = true
-localIP = "192.168.1.11"
-localPort = 80
-remotePort = 7505
-
-[[proxies]]
-name = "test"
-type = "tcp"
-enabled = true
-localIP = "127.0.0.1"
-localPort = 7890
-remotePort = 7890

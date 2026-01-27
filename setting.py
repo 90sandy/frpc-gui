@@ -3,6 +3,7 @@ import json
 import re
 import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
+from util import validate_ip_address, validate_port, center_window
 
 
 def check_frpc_config():
@@ -11,16 +12,8 @@ def check_frpc_config():
 
 
 def get_frpc_exe_path():
-    """获取保存的 frpc.exe 路径"""
-    config_file = 'frpc_config.json'
-    if os.path.exists(config_file):
-        try:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-                return config.get('frpc_exe_path', '')
-        except:
-            return ''
-    return ''
+    """获取保存的 frpc.exe 路径（从 frpc_config.json 读取）"""
+    return get_config_from_json('frpc_exe_path', '')
 
 
 def save_frpc_exe_path(path):
@@ -41,18 +34,10 @@ def save_frpc_exe_path(path):
 
 
 def get_port_range():
-    """获取保存的端口范围配置"""
-    config_file = 'frpc_config.json'
-    if os.path.exists(config_file):
-        try:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-                min_port = config.get('port_range_min', 1)
-                max_port = config.get('port_range_max', 65535)
-                return min_port, max_port
-        except:
-            return 1, 65535
-    return 1, 65535
+    """获取保存的端口范围配置（从 frpc_config.json 读取）"""
+    min_port = get_config_from_json('port_range_min', 1)
+    max_port = get_config_from_json('port_range_max', 65535)
+    return min_port, max_port
 
 
 def save_port_range(min_port, max_port):
@@ -73,6 +58,104 @@ def save_port_range(min_port, max_port):
         json.dump(config, f, ensure_ascii=False, indent=2)
 
 
+def save_web_auth(username, password):
+    """保存 Web 服务认证信息到 frpc_config.json"""
+    config_file = 'frpc_config.json'
+    config = {}
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        except:
+            pass
+    
+    config['web_username'] = username if username else ''
+    config['web_password'] = password if password else ''
+    
+    with open(config_file, 'w', encoding='utf-8') as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+
+
+def get_web_auth_from_json():
+    """从 frpc_config.json 获取 Web 服务认证信息"""
+    config_file = 'frpc_config.json'
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                username = config.get('web_username', '')
+                password = config.get('web_password', '')
+                if username and password:
+                    return username, password
+        except:
+            pass
+    return '', ''
+
+
+def save_all_config_to_json(
+    server_addr=None,
+    server_port=None,
+    token=None,
+    web_addr=None,
+    web_port=None,
+    web_username=None,
+    web_password=None,
+    log_level=None,
+    frpc_exe_path=None,
+    port_range_min=None,
+    port_range_max=None
+):
+    """保存所有配置到 frpc_config.json"""
+    config_file = 'frpc_config.json'
+    config = {}
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        except:
+            pass
+    
+    # 只更新提供的配置项
+    if server_addr is not None:
+        config['server_addr'] = server_addr
+    if server_port is not None:
+        config['server_port'] = server_port
+    if token is not None:
+        config['token'] = token
+    if web_addr is not None:
+        config['web_addr'] = web_addr
+    if web_port is not None:
+        config['web_port'] = web_port
+    if web_username is not None:
+        config['web_username'] = web_username
+    if web_password is not None:
+        config['web_password'] = web_password
+    if log_level is not None:
+        config['log_level'] = log_level
+    if frpc_exe_path is not None:
+        config['frpc_exe_path'] = frpc_exe_path
+    if port_range_min is not None:
+        config['port_range_min'] = port_range_min
+    if port_range_max is not None:
+        config['port_range_max'] = port_range_max
+    
+    with open(config_file, 'w', encoding='utf-8') as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+
+
+def get_config_from_json(key, default=None):
+    """从 frpc_config.json 获取指定配置项"""
+    config_file = 'frpc_config.json'
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                return config.get(key, default)
+        except:
+            pass
+    return default
+
+
 def get_web_auth():
     """从 frpc.toml 获取 Web 服务认证信息"""
     config = load_frpc_toml()
@@ -81,51 +164,6 @@ def get_web_auth():
         password = config.get('web_password', '')
         return username, password
     return '', ''
-
-
-def validate_ip_address(ip):
-    """
-    验证 IP 地址格式
-    支持 IPv4 地址
-    """
-    if not ip or not isinstance(ip, str):
-        return False
-    
-    # IPv4 地址格式验证
-    parts = ip.split('.')
-    if len(parts) != 4:
-        return False
-    
-    try:
-        for part in parts:
-            num = int(part)
-            if num < 0 or num > 255:
-                return False
-        return True
-    except ValueError:
-        return False
-
-
-def validate_port(port, min_port=1, max_port=65535):
-    """
-    验证端口号是否在有效范围内
-    
-    参数:
-        port: 端口号（可以是字符串或整数）
-        min_port: 最小端口号，默认 1
-        max_port: 最大端口号，默认 65535
-    
-    返回:
-        (is_valid, port_int): (是否有效, 端口整数)
-    """
-    try:
-        port_int = int(port)
-        if min_port <= port_int <= max_port:
-            return True, port_int
-        else:
-            return False, port_int
-    except (ValueError, TypeError):
-        return False, None
 
 
 def load_frpc_toml():
@@ -348,10 +386,7 @@ def show_settings_window(parent=None):
     root.resizable(False, False)
     
     # 居中显示窗口
-    root.update_idletasks()
-    x = (root.winfo_screenwidth() // 2) - (root.winfo_width() // 2)
-    y = (root.winfo_screenheight() // 2) - (root.winfo_height() // 2)
-    root.geometry(f"+{x}+{y}")
+    center_window(root)
     
     # 创建输入框和标签
     frame = ttk.Frame(root, padding="20")
@@ -363,14 +398,22 @@ def show_settings_window(parent=None):
     # 服务器 IP
     ttk.Label(frame, text="服务器 IP:").grid(row=0, column=0, sticky=tk.W, pady=5)
     server_ip_entry = ttk.Entry(frame, width=30)
-    if existing_config and 'server_addr' in existing_config:
+    # 优先从 frpc_config.json 读取，如果没有则从 frpc.toml 读取
+    server_ip_from_json = get_config_from_json('server_addr')
+    if server_ip_from_json:
+        server_ip_entry.insert(0, server_ip_from_json)
+    elif existing_config and 'server_addr' in existing_config:
         server_ip_entry.insert(0, existing_config['server_addr'])
     server_ip_entry.grid(row=0, column=1, pady=5, padx=10)
     
     # 服务器端口
     ttk.Label(frame, text="服务器端口:").grid(row=1, column=0, sticky=tk.W, pady=5)
     server_port_entry = ttk.Entry(frame, width=30)
-    if existing_config and 'server_port' in existing_config:
+    # 优先从 frpc_config.json 读取，如果没有则从 frpc.toml 读取
+    server_port_from_json = get_config_from_json('server_port')
+    if server_port_from_json:
+        server_port_entry.insert(0, str(server_port_from_json))
+    elif existing_config and 'server_port' in existing_config:
         server_port_entry.insert(0, existing_config['server_port'])
     else:
         server_port_entry.insert(0, "7000")
@@ -379,14 +422,22 @@ def show_settings_window(parent=None):
     # 访问 token（可选）
     ttk.Label(frame, text="访问 token (可选):").grid(row=2, column=0, sticky=tk.W, pady=5)
     token_entry = ttk.Entry(frame, width=30)
-    if existing_config and 'token' in existing_config:
+    # 优先从 frpc_config.json 读取，如果没有则从 frpc.toml 读取
+    token_from_json = get_config_from_json('token')
+    if token_from_json:
+        token_entry.insert(0, token_from_json)
+    elif existing_config and 'token' in existing_config:
         token_entry.insert(0, existing_config['token'])
     token_entry.grid(row=2, column=1, pady=5, padx=10)
     
     # Web 服务 IP
     ttk.Label(frame, text="Web 服务 IP:").grid(row=3, column=0, sticky=tk.W, pady=5)
     web_ip_entry = ttk.Entry(frame, width=30)
-    if existing_config and 'web_addr' in existing_config:
+    # 优先从 frpc_config.json 读取，如果没有则从 frpc.toml 读取
+    web_ip_from_json = get_config_from_json('web_addr')
+    if web_ip_from_json:
+        web_ip_entry.insert(0, web_ip_from_json)
+    elif existing_config and 'web_addr' in existing_config:
         web_ip_entry.insert(0, existing_config['web_addr'])
     else:
         web_ip_entry.insert(0, "127.0.0.1")
@@ -395,7 +446,11 @@ def show_settings_window(parent=None):
     # Web 服务端口
     ttk.Label(frame, text="Web 服务端口:").grid(row=4, column=0, sticky=tk.W, pady=5)
     web_port_entry = ttk.Entry(frame, width=30)
-    if existing_config and 'web_port' in existing_config:
+    # 优先从 frpc_config.json 读取，如果没有则从 frpc.toml 读取
+    web_port_from_json = get_config_from_json('web_port')
+    if web_port_from_json:
+        web_port_entry.insert(0, str(web_port_from_json))
+    elif existing_config and 'web_port' in existing_config:
         web_port_entry.insert(0, existing_config['web_port'])
     else:
         web_port_entry.insert(0, "7400")
@@ -404,14 +459,22 @@ def show_settings_window(parent=None):
     # Web 服务用户名（可选）
     ttk.Label(frame, text="Web 服务用户名 (可选):").grid(row=5, column=0, sticky=tk.W, pady=5)
     web_username_entry = ttk.Entry(frame, width=30)
-    if existing_config and 'web_user' in existing_config:
+    # 优先从 frpc_config.json 读取，如果没有则从 frpc.toml 读取
+    web_username_from_json, _ = get_web_auth_from_json()
+    if web_username_from_json:
+        web_username_entry.insert(0, web_username_from_json)
+    elif existing_config and 'web_user' in existing_config:
         web_username_entry.insert(0, existing_config['web_user'])
     web_username_entry.grid(row=5, column=1, pady=5, padx=10)
     
     # Web 服务密码（可选）
     ttk.Label(frame, text="Web 服务密码 (可选):").grid(row=6, column=0, sticky=tk.W, pady=5)
     web_password_entry = ttk.Entry(frame, width=30, show="*")
-    if existing_config and 'web_password' in existing_config:
+    # 优先从 frpc_config.json 读取，如果没有则从 frpc.toml 读取
+    _, web_password_from_json = get_web_auth_from_json()
+    if web_password_from_json:
+        web_password_entry.insert(0, web_password_from_json)
+    elif existing_config and 'web_password' in existing_config:
         web_password_entry.insert(0, existing_config['web_password'])
     web_password_entry.grid(row=6, column=1, pady=5, padx=10)
     
@@ -419,7 +482,11 @@ def show_settings_window(parent=None):
     ttk.Label(frame, text="日志等级:").grid(row=7, column=0, sticky=tk.W, pady=5)
     log_level_combo = ttk.Combobox(frame, width=27, state="readonly")
     log_level_combo['values'] = ('trace', 'debug', 'info', 'warn', 'error')
-    if existing_config and 'log_level' in existing_config:
+    # 优先从 frpc_config.json 读取，如果没有则从 frpc.toml 读取
+    log_level_from_json = get_config_from_json('log_level')
+    if log_level_from_json:
+        log_level_combo.set(log_level_from_json)
+    elif existing_config and 'log_level' in existing_config:
         log_level_combo.set(existing_config['log_level'])
     else:
         log_level_combo.set('info')
@@ -430,8 +497,9 @@ def show_settings_window(parent=None):
     port_range_frame = ttk.Frame(frame)
     port_range_frame.grid(row=8, column=1, pady=5, padx=10, sticky=tk.W)
     
-    # 加载已保存的端口范围
-    saved_min_port, saved_max_port = get_port_range()
+    # 加载已保存的端口范围（从 frpc_config.json 读取）
+    saved_min_port = get_config_from_json('port_range_min', 1)
+    saved_max_port = get_config_from_json('port_range_max', 65535)
     
     min_port_entry = ttk.Entry(port_range_frame, width=10)
     min_port_entry.insert(0, str(saved_min_port))
@@ -453,8 +521,8 @@ def show_settings_window(parent=None):
     frpc_path_entry = ttk.Entry(frpc_path_frame, width=25)
     frpc_path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
     
-    # 加载已保存的路径
-    saved_path = get_frpc_exe_path()
+    # 加载已保存的路径（从 frpc_config.json 读取）
+    saved_path = get_config_from_json('frpc_exe_path', '')
     if saved_path:
         frpc_path_entry.insert(0, saved_path)
     
@@ -570,12 +638,20 @@ def show_settings_window(parent=None):
                 web_password if web_password else None
             )
             
-            # 保存 frpc.exe 路径
-            if frpc_exe_path:
-                save_frpc_exe_path(frpc_exe_path)
-            
-            # 保存端口范围
-            save_port_range(min_port_int, max_port_int)
+            # 保存所有配置到 frpc_config.json
+            save_all_config_to_json(
+                server_addr=server_ip,
+                server_port=server_port_int,
+                token=token if token else '',
+                web_addr=web_ip,
+                web_port=web_port_int,
+                web_username=web_username if web_username else '',
+                web_password=web_password if web_password else '',
+                log_level=log_level,
+                frpc_exe_path=frpc_exe_path if frpc_exe_path else '',
+                port_range_min=min_port_int,
+                port_range_max=max_port_int
+            )
             
             if existing_config:
                 messagebox.showinfo("成功", "配置文件已更新：frpc.toml")

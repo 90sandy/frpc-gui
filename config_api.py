@@ -1,56 +1,41 @@
 import os
-import re
+import json
 import requests
 from typing import Optional, Dict, Any, List, Tuple
 
 
 def get_web_auth() -> Optional[Tuple[str, str]]:
-    """从 frpc.toml 中获取 Web 服务认证信息"""
-    if not os.path.exists('frpc.toml'):
-        return None
-    
-    try:
-        with open('frpc.toml', 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # 解析 webServer.user
-        user_match = re.search(r'webServer\.user\s*=\s*"([^"]+)"', content)
-        # 解析 webServer.password
-        password_match = re.search(r'webServer\.password\s*=\s*"([^"]+)"', content)
-        
-        if user_match and password_match:
-            username = user_match.group(1)
-            password = password_match.group(1)
-            if username and password:
-                return (username, password)
-    except:
-        pass
+    """从 frpc_config.json 中获取 Web 服务认证信息"""
+    config_file = 'frpc_config.json'
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                username = config.get('web_username', '')
+                password = config.get('web_password', '')
+                if username and password:
+                    return (username, password)
+        except:
+            pass
     
     return None
 
 
 def get_base_url() -> Optional[str]:
-    """从 frpc.toml 中读取 webServer 配置，构建 baseUrl"""
-    if not os.path.exists('frpc.toml'):
+    """从 frpc_config.json 中读取 webServer 配置，构建 baseUrl"""
+    config_file = 'frpc_config.json'
+    if not os.path.exists(config_file):
         return None
     
     try:
-        with open('frpc.toml', 'r', encoding='utf-8') as f:
-            content = f.read()
+        with open(config_file, 'r', encoding='utf-8') as f:
+            config = json.load(f)
         
-        # 解析 webServer.addr
-        addr_match = re.search(r'webServer\.addr\s*=\s*"([^"]+)"', content)
-        if not addr_match:
+        web_addr = config.get('web_addr')
+        web_port = config.get('web_port')
+        
+        if not web_addr or not web_port:
             return None
-        
-        web_addr = addr_match.group(1)
-        
-        # 解析 webServer.port
-        port_match = re.search(r'webServer\.port\s*=\s*(\d+)', content)
-        if not port_match:
-            return None
-        
-        web_port = port_match.group(1)
         
         # 构建 baseUrl
         base_url = f"http://{web_addr}:{web_port}"
@@ -330,6 +315,28 @@ def read_frpc_toml_content() -> Optional[str]:
         return None
 
 
+def check_frpc_service_status() -> Optional[int]:
+    """
+    通过 API 检测 frpc 服务是否在运行
+    
+    返回:
+        status_code: HTTP 状态码，如果连接成功返回 200，连接失败返回 None
+    """
+    try:
+        base_url = get_base_url()
+        if not base_url:
+            return None
+        
+        # 尝试连接 status API，使用较短的超时时间避免阻塞
+        url = f"{base_url}/api/status"
+        # 如果存在认证信息，使用 auth 参数
+        auth = get_web_auth()
+        response = requests.get(url, auth=auth, timeout=0.5)
+        return response.status_code
+    except:
+        return None
+
+
 def generate_toml_config(
     server_addr: str,
     server_port: int,
@@ -395,64 +402,3 @@ def generate_toml_config(
                 config_lines.append(f'remotePort = {proxy["remotePort"]}')
     
     return '\n'.join(config_lines)
-
-
-if __name__ == '__main__':
-    # 测试代码
-    print("测试配置读取功能...")
-    
-    # 测试获取 baseUrl
-    base_url = get_base_url()
-    print(f"Base URL: {base_url}")
-    
-    # 测试读取配置文件（通过 API）
-    print("\n通过 API 读取配置:")
-    config = read_config_file()
-    print(config)
-    
-    # 测试直接读取本地文件
-    print("\n直接读取本地 frpc.toml 文件:")
-    content = read_frpc_toml_content()
-    if content:
-        print(content)
-    else:
-        print("文件不存在或读取失败")
-    
-    # 测试生成 TOML 配置
-    print("\n测试生成 TOML 配置:")
-    toml_config = generate_toml_config(
-        server_addr="162.14.77.110",
-        server_port=7000,
-        auth_token="d4c2dc7262c3d97bcaf3c2d1201282e3",
-        web_addr="127.0.0.1",
-        web_port=7400,
-        proxies=[
-            {
-                "name": "test-tcp",
-                "type": "tcp",
-                "localIP": "192.168.0.107",
-                "localPort": 6969,
-                "remotePort": 7503
-            }
-        ]
-    )
-    print("生成的 TOML 配置:")
-    print(toml_config)
-    
-    # 测试写入配置（会自动重载）
-    print("\n测试写入配置（会自动重载）:")
-    print("（注释掉实际调用，取消注释以测试）")
-    # result = write_config_file(toml_config, auto_reload=True)
-    # print(result)
-    
-    # 测试单独重载配置
-    print("\n测试单独重载配置:")
-    print("（注释掉实际调用，取消注释以测试）")
-    # reload_result = reload_config()
-    # print(reload_result)
-    
-    # 测试查询代理列表和状态
-    print("\n测试查询代理列表和状态:")
-    print("（注释掉实际调用，取消注释以测试）")
-    # proxy_status = get_proxy_status()
-    # print(proxy_status)

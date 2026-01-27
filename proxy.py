@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from setting import load_frpc_toml, generate_frpc_toml, validate_ip_address, validate_port, get_port_range
-from config import get_proxy_status, write_config_file, read_frpc_toml_content
+from setting import load_frpc_toml, generate_frpc_toml, get_port_range
+from config_api import get_proxy_status, write_config_file, read_frpc_toml_content
+from util import validate_ip_address, validate_port, center_window
 
 
 def generate_frpc_toml_with_proxies(server_addr, server_port, token=None, web_addr="127.0.0.1", web_port=7400, log_level="info", proxies=None):
@@ -337,10 +338,7 @@ class ProxyManager:
         dialog.grab_set()
         
         # 居中显示
-        dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
-        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
-        dialog.geometry(f"+{x}+{y}")
+        center_window(dialog)
         
         frame = ttk.Frame(dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
