@@ -373,6 +373,9 @@ def show_settings_window(parent=None):
     
     参数:
         parent: 父窗口，如果提供则作为 Toplevel 窗口打开，否则作为独立窗口
+    
+    返回:
+        bool: 如果用户保存了配置返回 True，如果取消或关闭窗口返回 False
     """
     if parent:
         root = tk.Toplevel(parent)
@@ -387,6 +390,9 @@ def show_settings_window(parent=None):
     
     # 居中显示窗口
     center_window(root)
+    
+    # 用于跟踪用户是否保存了配置
+    config_saved = [False]  # 使用列表以便在嵌套函数中修改
     
     # 创建输入框和标签
     frame = ttk.Frame(root, padding="20")
@@ -657,6 +663,7 @@ def show_settings_window(parent=None):
                 messagebox.showinfo("成功", "配置文件已更新：frpc.toml")
             else:
                 messagebox.showinfo("成功", "配置文件已生成：frpc.toml")
+            config_saved[0] = True  # 标记配置已保存
             root.destroy()
             if parent:
                 parent.attributes('-disabled', False)
@@ -668,12 +675,17 @@ def show_settings_window(parent=None):
     
     def on_close():
         """窗口关闭时的处理"""
-        root.destroy()
         if parent:
+            # 如果有父窗口，先恢复父窗口状态
+            root.destroy()
             parent.attributes('-disabled', False)
             parent.deiconify()  # 如果窗口被最小化，先恢复窗口
             parent.lift()  # 将父窗口提升到最前面
             parent.focus_set()  # 让父窗口获得焦点
+        else:
+            # 如果没有父窗口，先退出主循环，然后销毁窗口
+            root.quit()
+            root.destroy()
     
     # 按钮框架
     button_frame = ttk.Frame(frame)
@@ -694,15 +706,27 @@ def show_settings_window(parent=None):
         # 如果是子窗口，禁用父窗口
         parent.attributes('-disabled', True)
         root.wait_window()
+        return config_saved[0]
     else:
         # 如果是独立窗口，运行主循环
         root.mainloop()
+        return config_saved[0]
 
 
 def init_frpc_config():
-    """初始化 FRPC 配置，如果不存在则提示设置"""
+    """
+    初始化 FRPC 配置，如果不存在则提示设置
+    
+    返回:
+        bool: 如果配置文件存在或已成功创建返回 True，如果用户取消了配置返回 False
+    """
     if not check_frpc_config():
-        show_settings_window()
+        # 显示设置窗口，如果用户保存了配置返回 True，否则返回 False
+        saved = show_settings_window()
+        # 如果用户保存了配置，再次检查配置文件是否存在
+        if saved and check_frpc_config():
+            return True
+        # 如果用户取消了，返回 False
         return False
     return True
 

@@ -193,6 +193,9 @@ class ProxyManager:
         # 绑定双击事件编辑代理
         self.proxy_tree.bind('<Double-1>', self.edit_proxy)
         
+        # 绑定右键菜单
+        self.proxy_tree.bind('<Button-3>', self.show_context_menu)
+        
         # 初始加载代理列表
         self.refresh_proxy_list()
     
@@ -228,6 +231,76 @@ class ProxyManager:
         
         if proxy_count == 0:
             self.proxy_tree.insert('', tk.END, values=('', '', '暂无代理', '', ''))
+    
+    def show_context_menu(self, event):
+        """显示右键菜单"""
+        # 获取点击位置对应的项
+        item = self.proxy_tree.identify_row(event.y)
+        if not item:
+            return
+        
+        # 选中该项
+        self.proxy_tree.selection_set(item)
+        
+        # 获取该项的值
+        item_values = self.proxy_tree.item(item, 'values')
+        if not item_values or len(item_values) < 5:
+            return
+        
+        remote_addr = item_values[4]  # remote_addr 在第5列（索引4）
+        if not remote_addr or remote_addr.strip() == '':
+            return
+        
+        # 创建右键菜单
+        context_menu = tk.Menu(self.parent_window, tearoff=0)
+        # 使用 functools.partial 或直接定义函数来避免 lambda 闭包问题
+        def copy_remote_addr():
+            self.copy_to_clipboard(remote_addr)
+        
+        context_menu.add_command(
+            label=f"复制远程地址: {remote_addr}",
+            command=copy_remote_addr
+        )
+        
+        # 显示菜单
+        try:
+            context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            # 延迟销毁菜单，确保命令能够执行
+            self.parent_window.after(100, context_menu.destroy)
+    
+    def copy_to_clipboard(self, text):
+        """复制文本到剪贴板"""
+        import subprocess
+        import sys
+        
+        # 优先使用 Windows 的 clip 命令（最可靠）
+        if sys.platform == 'win32':
+            try:
+                # 使用 subprocess.run 更简单可靠
+                result = subprocess.run(
+                    ['clip'],
+                    input=text.encode('utf-8'),
+                    check=True,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+                messagebox.showinfo("成功", f"已复制到剪贴板: {text}")
+                return
+            except subprocess.CalledProcessError:
+                pass  # 如果失败，尝试其他方法
+            except Exception:
+                pass  # 如果失败，尝试其他方法
+        
+        # 备用方法: 使用 Tkinter 剪贴板
+        try:
+            self.parent_window.clipboard_clear()
+            self.parent_window.clipboard_append(text)
+            # 在 Windows 上需要调用 update() 确保剪贴板操作完成
+            self.parent_window.update()
+            messagebox.showinfo("成功", f"已复制到剪贴板: {text}")
+        except Exception as e:
+            # 如果都失败了，显示错误信息并提示手动复制
+            messagebox.showerror("错误", f"复制失败: {str(e)}\n\n请手动复制: {text}")
     
     def add_proxy(self):
         """新增代理"""
