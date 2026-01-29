@@ -1,3 +1,4 @@
+import re
 import tkinter as tk
 
 
@@ -28,6 +29,65 @@ def validate_ip_address(ip):
         return True
     except ValueError:
         return False
+
+
+def validate_server_address(address):
+    """
+    验证服务器地址格式
+    支持 IPv4 地址和域名
+    
+    参数:
+        address: 服务器地址字符串（IP 或域名）
+    
+    返回:
+        bool: 是否为有效的服务器地址
+    """
+    if not address or not isinstance(address, str):
+        return False
+    
+    address = address.strip()
+    if not address:
+        return False
+    
+    # 首先尝试作为 IP 地址验证
+    if validate_ip_address(address):
+        return True
+    
+    # 如果不是 IP 地址，则作为域名验证
+    # 域名基本规则：
+    # 1. 只能包含字母、数字、连字符和点
+    # 2. 不能以连字符或点开头或结尾
+    # 3. 至少包含一个点（顶级域名）
+    # 4. 每个标签长度不超过 63 个字符
+    # 5. 总长度不超过 253 个字符
+    
+    # 检查总长度
+    if len(address) > 253:
+        return False
+    
+    # 检查是否以连字符或点开头/结尾
+    if address.startswith('-') or address.endswith('-'):
+        return False
+    if address.startswith('.') or address.endswith('.'):
+        return False
+    
+    # 检查是否包含至少一个点
+    if '.' not in address:
+        return False
+    
+    # 使用正则表达式验证域名格式
+    # 允许的字符：字母、数字、连字符、点
+    domain_pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$'
+    
+    if re.match(domain_pattern, address):
+        # 验证每个标签的长度不超过 63 个字符
+        labels = address.split('.')
+        for label in labels:
+            if len(label) > 63:
+                return False
+        return True
+    
+    return False
 
 
 def validate_port(port, min_port=1, max_port=65535):

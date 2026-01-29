@@ -3,7 +3,7 @@ import json
 import re
 import tkinter as tk
 from tkinter import messagebox, ttk, filedialog
-from util import validate_ip_address, validate_port, center_window
+from util import validate_ip_address, validate_server_address, validate_port, center_window
 
 
 def check_frpc_config():
@@ -401,8 +401,8 @@ def show_settings_window(parent=None):
     # 加载现有配置
     existing_config = load_frpc_toml()
     
-    # 服务器 IP
-    ttk.Label(frame, text="服务器 IP:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    # 服务器地址（支持 IP 或域名）
+    ttk.Label(frame, text="服务器地址:").grid(row=0, column=0, sticky=tk.W, pady=5)
     server_ip_entry = ttk.Entry(frame, width=30)
     # 优先从 frpc_config.json 读取，如果没有则从 frpc.toml 读取
     server_ip_from_json = get_config_from_json('server_addr')
@@ -559,12 +559,12 @@ def show_settings_window(parent=None):
         
         # 验证必填项
         if not server_ip:
-            messagebox.showerror("错误", "请输入服务器 IP")
+            messagebox.showerror("错误", "请输入服务器地址")
             return
         
-        # 校验服务器 IP
-        if not validate_ip_address(server_ip):
-            messagebox.showerror("错误", "服务器 IP 格式不正确，请输入有效的 IPv4 地址")
+        # 校验服务器地址（支持 IP 地址或域名）
+        if not validate_server_address(server_ip):
+            messagebox.showerror("错误", "服务器地址格式不正确，请输入有效的 IP 地址或域名")
             return
         
         if not server_port:
