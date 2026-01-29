@@ -66,6 +66,12 @@ pip install requests
 
 确保您有 FRPC 的可执行文件（`frpc.exe`），可以从 [FRP 官方仓库](https://github.com/fatedier/frp) 下载。
 
+### 4. 打包exe
+
+```
+pyinstaller --onefile --windowed --icon=logo.ico main.py
+```
+
 ## 使用方法
 
 ### 启动应用
