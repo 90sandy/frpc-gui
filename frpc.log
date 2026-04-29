@@ -1,0 +1,222 @@
+2026-01-28 11:53:43.003 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-28 11:53:43.011 [I] [client/service.go:331] try to connect to server...
+2026-01-28 11:53:43.011 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-28 11:53:43.119 [I] [client/service.go:323] [cb1b30697d891a82] login to server success, get run id [cb1b30697d891a82]
+2026-01-28 11:53:59.477 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:53:59.477 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:54:01.319 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:54:01.319 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:54:01.496 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:54:01.498 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:54:01.704 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:54:01.704 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:54:20.273 [I] [client/admin_api.go:231] http put request [/api/config]
+2026-01-28 11:54:20.274 [I] [client/admin_api.go:233] http put response [/api/config], code [200]
+2026-01-28 11:54:20.277 [I] [client/admin_api.go:79] api request [/api/reload]
+2026-01-28 11:54:20.277 [I] [proxy/proxy_manager.go:180] [cb1b30697d891a82] proxy added: [测试]
+2026-01-28 11:54:20.277 [I] [client/admin_api.go:108] success reload conf
+2026-01-28 11:54:20.277 [I] [client/admin_api.go:81] api response [/api/reload], code [200]
+2026-01-28 11:54:20.282 [I] [client/control.go:172] [cb1b30697d891a82] [测试] start proxy success
+2026-01-28 11:54:21.663 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:54:21.663 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:55:14.278 [I] [client/admin_api.go:231] http put request [/api/config]
+2026-01-28 11:55:14.278 [I] [client/admin_api.go:233] http put response [/api/config], code [200]
+2026-01-28 11:55:14.281 [I] [client/admin_api.go:79] api request [/api/reload]
+2026-01-28 11:55:14.283 [I] [proxy/proxy_manager.go:180] [cb1b30697d891a82] proxy added: [3333]
+2026-01-28 11:55:14.283 [I] [client/admin_api.go:108] success reload conf
+2026-01-28 11:55:14.283 [I] [client/admin_api.go:81] api response [/api/reload], code [200]
+2026-01-28 11:55:14.286 [W] [client/control.go:170] [cb1b30697d891a82] [3333] start error: type [http] not supported when vhost http port is not set
+2026-01-28 11:55:15.242 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:55:15.242 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:55:34.125 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:55:34.125 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:55:46.562 [I] [client/admin_api.go:231] http put request [/api/config]
+2026-01-28 11:55:46.562 [I] [client/admin_api.go:233] http put response [/api/config], code [200]
+2026-01-28 11:55:46.566 [I] [client/admin_api.go:79] api request [/api/reload]
+2026-01-28 11:55:46.567 [I] [proxy/proxy_manager.go:162] [cb1b30697d891a82] proxy removed: [3333]
+2026-01-28 11:55:46.567 [I] [client/admin_api.go:108] success reload conf
+2026-01-28 11:55:46.567 [I] [client/admin_api.go:81] api response [/api/reload], code [200]
+2026-01-28 11:55:47.487 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:55:47.487 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:57:48.405 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-28 11:57:48.412 [I] [client/service.go:331] try to connect to server...
+2026-01-28 11:57:48.412 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-28 11:57:48.435 [I] [client/service.go:323] [9e5164a81c742f6c] login to server success, get run id [9e5164a81c742f6c]
+2026-01-28 11:57:48.435 [I] [proxy/proxy_manager.go:180] [9e5164a81c742f6c] proxy added: [测试]
+2026-01-28 11:57:48.439 [I] [client/control.go:172] [9e5164a81c742f6c] [测试] start proxy success
+2026-01-28 11:57:50.171 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:57:50.171 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:59:09.242 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:59:09.242 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:59:09.245 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:59:09.245 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:59:09.259 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:59:09.259 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:59:09.372 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:59:09.372 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:59:09.382 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:59:09.382 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:59:09.387 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:59:09.387 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 11:59:27.402 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-28 11:59:27.410 [I] [client/service.go:331] try to connect to server...
+2026-01-28 11:59:27.410 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-28 11:59:27.433 [I] [client/service.go:323] [66c66945f0b9cbd6] login to server success, get run id [66c66945f0b9cbd6]
+2026-01-28 11:59:27.433 [I] [proxy/proxy_manager.go:180] [66c66945f0b9cbd6] proxy added: [测试]
+2026-01-28 11:59:27.438 [I] [client/control.go:172] [66c66945f0b9cbd6] [测试] start proxy success
+2026-01-28 11:59:29.304 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 11:59:29.305 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-28 12:01:12.619 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-28 12:01:12.626 [I] [client/service.go:331] try to connect to server...
+2026-01-28 12:01:12.626 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-28 12:01:12.648 [I] [client/service.go:323] [8e8c67f22f83b92b] login to server success, get run id [8e8c67f22f83b92b]
+2026-01-28 12:01:12.649 [I] [proxy/proxy_manager.go:180] [8e8c67f22f83b92b] proxy added: [测试]
+2026-01-28 12:01:12.654 [I] [client/control.go:172] [8e8c67f22f83b92b] [测试] start proxy success
+2026-01-28 12:01:14.625 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-28 12:01:14.625 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:25:15.519 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-29 14:25:15.527 [I] [client/service.go:331] try to connect to server...
+2026-01-29 14:25:15.527 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-29 14:25:18.003 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-29 14:25:18.003 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:25:19.014 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-29 14:25:19.014 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:25:19.189 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-29 14:25:19.189 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:25:19.340 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-29 14:25:19.340 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:45:42.742 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-29 14:45:42.750 [I] [client/service.go:331] try to connect to server...
+2026-01-29 14:45:42.750 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-29 14:45:47.166 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-29 14:45:47.166 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:45:48.091 [W] [client/service.go:334] connect to server error: session shutdown
+2026-01-29 14:45:48.091 [I] [sub/root.go:178] frpc service for config file [frpc.toml] stopped
+2026-01-29 14:49:44.345 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-29 14:49:44.352 [I] [client/service.go:331] try to connect to server...
+2026-01-29 14:49:44.353 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-29 14:49:46.919 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-29 14:49:46.919 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:49:47.803 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-29 14:49:47.803 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:49:49.366 [W] [client/service.go:334] connect to server error: session shutdown
+2026-01-29 14:49:49.366 [I] [sub/root.go:178] frpc service for config file [frpc.toml] stopped
+2026-01-29 14:52:11.055 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-29 14:52:11.063 [I] [client/service.go:331] try to connect to server...
+2026-01-29 14:52:11.063 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-29 14:52:14.137 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-29 14:52:14.137 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:52:15.098 [I] [client/admin_api.go:168] http request [/api/status]
+2026-01-29 14:52:15.098 [I] [client/admin_api.go:170] http response [/api/status]
+2026-01-29 14:52:16.077 [W] [client/service.go:334] connect to server error: session shutdown
+2026-01-29 14:52:16.077 [I] [sub/root.go:178] frpc service for config file [frpc.toml] stopped
+2026-01-29 14:53:17.216 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-29 14:53:17.223 [I] [client/service.go:331] try to connect to server...
+2026-01-29 14:53:17.223 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-29 14:53:29.739 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-29 14:53:29.746 [I] [client/service.go:331] try to connect to server...
+2026-01-29 14:53:29.746 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-29 14:53:34.751 [W] [client/service.go:334] connect to server error: session shutdown
+2026-01-29 14:53:34.751 [I] [sub/root.go:178] frpc service for config file [frpc.toml] stopped
+2026-01-29 14:54:29.270 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-29 14:54:29.278 [I] [client/service.go:331] try to connect to server...
+2026-01-29 14:54:29.278 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-29 14:54:34.283 [W] [client/service.go:334] connect to server error: session shutdown
+2026-01-29 14:54:34.284 [I] [sub/root.go:178] frpc service for config file [frpc.toml] stopped
+2026-01-29 14:57:14.072 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-01-29 14:57:14.080 [I] [client/service.go:331] try to connect to server...
+2026-01-29 14:57:14.080 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-01-29 14:57:14.113 [I] [client/service.go:323] [e79f4cab56b15b4f] login to server success, get run id [e79f4cab56b15b4f]
+2026-01-29 14:57:14.113 [I] [proxy/proxy_manager.go:180] [e79f4cab56b15b4f] proxy added: [测试]
+2026-01-29 14:57:14.118 [I] [client/control.go:172] [e79f4cab56b15b4f] [测试] start proxy success
+2026-01-29 14:58:22.517 [I] [client/service.go:331] [e79f4cab56b15b4f] try to connect to server...
+2026-01-29 14:58:23.052 [I] [client/service.go:323] [e79f4cab56b15b4f] login to server success, get run id [e79f4cab56b15b4f]
+2026-01-29 14:58:23.053 [I] [proxy/proxy_manager.go:180] [e79f4cab56b15b4f] proxy added: [测试]
+2026-01-29 14:58:23.058 [I] [client/control.go:172] [e79f4cab56b15b4f] [测试] start proxy success
+2026-04-24 15:43:48.662 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-04-24 15:43:48.679 [I] [client/service.go:331] try to connect to server...
+2026-04-24 15:43:48.679 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-04-24 15:43:48.717 [I] [client/service.go:323] [5b27586b832734e7] login to server success, get run id [5b27586b832734e7]
+2026-04-24 15:43:48.717 [I] [proxy/proxy_manager.go:180] [5b27586b832734e7] proxy added: [测试]
+2026-04-24 15:43:48.723 [I] [client/control.go:172] [5b27586b832734e7] [测试] start proxy success
+2026-04-24 15:43:50.373 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-24 15:43:50.376 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-24 15:44:26.180 [I] [client/admin_api.go:231] http put request [/api/config]
+2026-04-24 15:44:26.181 [I] [client/admin_api.go:233] http put response [/api/config], code [200]
+2026-04-24 15:44:26.184 [I] [client/admin_api.go:79] api request [/api/reload]
+2026-04-24 15:44:26.188 [I] [proxy/proxy_manager.go:180] [5b27586b832734e7] proxy added: [ship]
+2026-04-24 15:44:26.188 [I] [client/admin_api.go:108] success reload conf
+2026-04-24 15:44:26.188 [I] [client/admin_api.go:81] api response [/api/reload], code [200]
+2026-04-24 15:44:26.195 [I] [client/control.go:172] [5b27586b832734e7] [ship] start proxy success
+2026-04-24 15:44:27.161 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-24 15:44:27.162 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-24 15:44:33.868 [E] [proxy/proxy.go:202] [5b27586b832734e7] [测试] connect to local service [127.0.0.1:6789] error: dial tcp 127.0.0.1:6789: connectex: No connection could be made because the target machine actively refused it.
+2026-04-24 15:44:33.881 [E] [proxy/proxy.go:202] [5b27586b832734e7] [测试] connect to local service [127.0.0.1:6789] error: dial tcp 127.0.0.1:6789: connectex: No connection could be made because the target machine actively refused it.
+2026-04-24 15:44:34.950 [E] [proxy/proxy.go:202] [5b27586b832734e7] [测试] connect to local service [127.0.0.1:6789] error: dial tcp 127.0.0.1:6789: connectex: No connection could be made because the target machine actively refused it.
+2026-04-24 15:44:34.950 [E] [proxy/proxy.go:202] [5b27586b832734e7] [测试] connect to local service [127.0.0.1:6789] error: dial tcp 127.0.0.1:6789: connectex: No connection could be made because the target machine actively refused it.
+2026-04-24 15:44:39.995 [E] [proxy/proxy.go:202] [5b27586b832734e7] [测试] connect to local service [127.0.0.1:6789] error: dial tcp 127.0.0.1:6789: connectex: No connection could be made because the target machine actively refused it.
+2026-04-24 15:44:39.995 [E] [proxy/proxy.go:202] [5b27586b832734e7] [测试] connect to local service [127.0.0.1:6789] error: dial tcp 127.0.0.1:6789: connectex: No connection could be made because the target machine actively refused it.
+2026-04-24 15:49:31.351 [E] [proxy/proxy.go:202] [5b27586b832734e7] [测试] connect to local service [127.0.0.1:6789] error: dial tcp 127.0.0.1:6789: connectex: No connection could be made because the target machine actively refused it.
+2026-04-24 15:49:43.304 [E] [proxy/proxy.go:202] [5b27586b832734e7] [测试] connect to local service [127.0.0.1:6789] error: dial tcp 127.0.0.1:6789: connectex: No connection could be made because the target machine actively refused it.
+2026-04-24 16:02:11.010 [I] [client/admin_api.go:231] http put request [/api/config]
+2026-04-24 16:02:11.010 [I] [client/admin_api.go:233] http put response [/api/config], code [200]
+2026-04-24 16:02:11.012 [I] [client/admin_api.go:79] api request [/api/reload]
+2026-04-24 16:02:11.012 [I] [proxy/proxy_manager.go:162] [5b27586b832734e7] proxy removed: [ship]
+2026-04-24 16:02:11.012 [I] [client/admin_api.go:108] success reload conf
+2026-04-24 16:02:11.012 [I] [client/admin_api.go:81] api response [/api/reload], code [200]
+2026-04-24 16:02:11.923 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-24 16:02:11.923 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-24 16:02:38.556 [I] [client/admin_api.go:231] http put request [/api/config]
+2026-04-24 16:02:38.556 [I] [client/admin_api.go:233] http put response [/api/config], code [200]
+2026-04-24 16:02:38.558 [I] [client/admin_api.go:79] api request [/api/reload]
+2026-04-24 16:02:38.560 [I] [proxy/proxy_manager.go:180] [5b27586b832734e7] proxy added: [ship]
+2026-04-24 16:02:38.560 [I] [client/admin_api.go:108] success reload conf
+2026-04-24 16:02:38.560 [I] [client/admin_api.go:81] api response [/api/reload], code [200]
+2026-04-24 16:02:38.570 [W] [client/control.go:170] [5b27586b832734e7] [ship] start error: subdomain is not supported because this feature is not enabled in server
+2026-04-24 16:02:39.712 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-24 16:02:39.712 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-24 16:03:00.724 [I] [client/admin_api.go:231] http put request [/api/config]
+2026-04-24 16:03:00.724 [I] [client/admin_api.go:233] http put response [/api/config], code [200]
+2026-04-24 16:03:00.726 [I] [client/admin_api.go:79] api request [/api/reload]
+2026-04-24 16:03:00.726 [I] [proxy/proxy_manager.go:162] [5b27586b832734e7] proxy removed: [ship]
+2026-04-24 16:03:00.727 [I] [client/admin_api.go:108] success reload conf
+2026-04-24 16:03:00.727 [I] [client/admin_api.go:81] api response [/api/reload], code [200]
+2026-04-24 16:03:01.582 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-24 16:03:01.582 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-24 16:03:27.100 [I] [client/admin_api.go:231] http put request [/api/config]
+2026-04-24 16:03:27.100 [I] [client/admin_api.go:233] http put response [/api/config], code [200]
+2026-04-24 16:03:27.101 [I] [client/admin_api.go:79] api request [/api/reload]
+2026-04-24 16:03:27.102 [I] [proxy/proxy_manager.go:180] [5b27586b832734e7] proxy added: [ship]
+2026-04-24 16:03:27.102 [I] [client/admin_api.go:108] success reload conf
+2026-04-24 16:03:27.102 [I] [client/admin_api.go:81] api response [/api/reload], code [200]
+2026-04-24 16:03:27.108 [I] [client/control.go:172] [5b27586b832734e7] [ship] start proxy success
+2026-04-24 16:03:28.212 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-24 16:03:28.212 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-24 16:14:53.045 [I] [client/admin_api.go:231] http put request [/api/config]
+2026-04-24 16:14:53.045 [I] [client/admin_api.go:233] http put response [/api/config], code [200]
+2026-04-24 16:14:53.065 [I] [client/admin_api.go:79] api request [/api/reload]
+2026-04-24 16:14:53.065 [I] [proxy/proxy_manager.go:162] [5b27586b832734e7] proxy removed: [测试]
+2026-04-24 16:14:53.065 [I] [client/admin_api.go:108] success reload conf
+2026-04-24 16:14:53.065 [I] [client/admin_api.go:81] api response [/api/reload], code [200]
+2026-04-24 16:14:54.132 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-24 16:14:54.132 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-24 16:15:04.044 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-24 16:15:04.044 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-24 16:18:41.312 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-24 16:18:41.312 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-29 18:07:14.510 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-04-29 18:07:14.517 [I] [client/service.go:331] try to connect to server...
+2026-04-29 18:07:14.517 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-04-29 18:07:14.542 [I] [client/service.go:323] [6d44f6159c7bd173] login to server success, get run id [6d44f6159c7bd173]
+2026-04-29 18:07:14.543 [I] [proxy/proxy_manager.go:180] [6d44f6159c7bd173] proxy added: [ship]
+2026-04-29 18:07:14.547 [W] [client/control.go:170] [6d44f6159c7bd173] [ship] start error: custom domain [ship.dongzp.site] should not belong to subdomain host [dongzp.site]
+2026-04-29 18:07:18.014 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-29 18:07:18.014 [I] [client/admin_api.go:170] http response [/api/status]
+2026-04-29 18:07:41.120 [I] [sub/root.go:159] start frpc service for config file [frpc.toml]
+2026-04-29 18:07:41.124 [I] [client/service.go:210] admin server listen on 127.0.0.1:7400
+2026-04-29 18:07:41.124 [I] [client/service.go:331] try to connect to server...
+2026-04-29 18:07:41.149 [I] [client/service.go:323] [4cab3639ed4340d5] login to server success, get run id [4cab3639ed4340d5]
+2026-04-29 18:07:41.149 [I] [proxy/proxy_manager.go:180] [4cab3639ed4340d5] proxy added: [ship]
+2026-04-29 18:07:41.153 [W] [client/control.go:170] [4cab3639ed4340d5] [ship] start error: custom domain [ship.dongzp.site] should not belong to subdomain host [dongzp.site]
+2026-04-29 18:07:49.790 [I] [client/admin_api.go:168] http request [/api/status]
+2026-04-29 18:07:49.790 [I] [client/admin_api.go:170] http response [/api/status]

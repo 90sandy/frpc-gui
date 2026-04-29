@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from setting import load_frpc_toml, get_port_range, get_web_auth_from_json
+from setting import load_frpc_toml, get_port_range, get_web_auth_from_json, get_config_from_json
 from config_api import get_proxy_status, write_config_file, read_frpc_toml_content
 from util import validate_ip_address, validate_port, center_window
 
@@ -436,6 +436,9 @@ class ProxyManager:
         
         frame = ttk.Frame(dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
+
+        # 全局开关：控制代理弹窗中是否显示“子域名”选项
+        enable_subdomain = get_config_from_json('enable_subdomain', False)
         
         # 代理名称
         ttk.Label(frame, text="名称:").grid(row=0, column=0, sticky=tk.W, pady=5)
@@ -520,11 +523,17 @@ class ProxyManager:
                 button_frame.grid(row=6, column=0, columnspan=2, pady=20)
             elif ptype in ['http', 'https', 'tcpmux']:
                 # http/https/tcpmux 需要子域名或自定义域名
-                subdomain_label.grid(row=5, column=0, sticky=tk.W, pady=5)
-                subdomain_entry.grid(row=5, column=1, pady=5, padx=10)
-                custom_domains_label.grid(row=6, column=0, sticky=tk.W, pady=5)
-                custom_domains_entry.grid(row=6, column=1, pady=5, padx=10)
-                button_frame.grid(row=7, column=0, columnspan=2, pady=20)
+                if enable_subdomain:
+                    subdomain_label.grid(row=5, column=0, sticky=tk.W, pady=5)
+                    subdomain_entry.grid(row=5, column=1, pady=5, padx=10)
+                    custom_domains_label.grid(row=6, column=0, sticky=tk.W, pady=5)
+                    custom_domains_entry.grid(row=6, column=1, pady=5, padx=10)
+                    button_frame.grid(row=7, column=0, columnspan=2, pady=20)
+                else:
+                    # 不显示“子域名”，改为只显示自定义域名
+                    custom_domains_label.grid(row=5, column=0, sticky=tk.W, pady=5)
+                    custom_domains_entry.grid(row=5, column=1, pady=5, padx=10)
+                    button_frame.grid(row=6, column=0, columnspan=2, pady=20)
             else:
                 # stcp, sudp, xtcp 不需要额外字段
                 button_frame.grid(row=5, column=0, columnspan=2, pady=20)
@@ -605,12 +614,23 @@ class ProxyManager:
                 
                 new_proxy['remotePort'] = remote_port_int
             elif ptype in ['http', 'https', 'tcpmux']:
-                # http/https/tcpmux 需要子域名或自定义域名（二选一）
-                subdomain = subdomain_entry.get().strip()
+                # http/https/tcpmux 需要子域名或自定义域名
                 custom_domains = custom_domains_entry.get().strip()
+                existing_subdomain = proxy_data.get('subdomain', '').strip() if proxy_data else ''
+
+                if enable_subdomain:
+                    subdomain = subdomain_entry.get().strip()
+                else:
+                    # 未开启时不展示子域名输入框：
+                    # 1) 若用户未填写 customDomains，则沿用已有子域名（避免编辑时无法保存）
+                    # 2) 若用户填写了 customDomains，则不再写入子域名
+                    subdomain = existing_subdomain if not custom_domains else ''
                 
                 if not subdomain and not custom_domains:
-                    messagebox.showerror("错误", "请输入子域名或自定义域名（至少填写一个）")
+                    if enable_subdomain:
+                        messagebox.showerror("错误", "请输入子域名或自定义域名（至少填写一个）")
+                    else:
+                        messagebox.showerror("错误", "请输入自定义域名（至少填写一个）")
                     return
                 
                 if subdomain:

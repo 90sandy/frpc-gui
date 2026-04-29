@@ -103,7 +103,8 @@ def save_all_config_to_json(
     log_level=None,
     frpc_exe_path=None,
     port_range_min=None,
-    port_range_max=None
+    port_range_max=None,
+    enable_subdomain=None
 ):
     """保存所有配置到 frpc_config.json"""
     config_file = 'frpc_config.json'
@@ -138,6 +139,8 @@ def save_all_config_to_json(
         config['port_range_min'] = port_range_min
     if port_range_max is not None:
         config['port_range_max'] = port_range_max
+    if enable_subdomain is not None:
+        config['enable_subdomain'] = enable_subdomain
     
     with open(config_file, 'w', encoding='utf-8') as f:
         json.dump(config, f, ensure_ascii=False, indent=2)
@@ -385,7 +388,7 @@ def show_settings_window(parent=None):
         root = tk.Tk()
     
     root.title("FRPC 配置设置")
-    root.geometry("500x600")
+    root.geometry("500x650")
     root.resizable(False, False)
     
     # 居中显示窗口
@@ -544,6 +547,13 @@ def show_settings_window(parent=None):
     
     browse_button = ttk.Button(frpc_path_frame, text="浏览", command=browse_frpc_exe)
     browse_button.pack(side=tk.LEFT, padx=(5, 0))
+
+    # 是否开启子域名（控制代理弹窗中是否显示“子域名”选项）
+    ttk.Label(frame, text="是否开启子域名:").grid(row=10, column=0, sticky=tk.W, pady=5)
+    enable_subdomain_var = tk.BooleanVar()
+    enable_subdomain_var.set(bool(get_config_from_json('enable_subdomain', False)))
+    enable_subdomain_check = ttk.Checkbutton(frame, variable=enable_subdomain_var)
+    enable_subdomain_check.grid(row=10, column=1, pady=5, padx=10, sticky=tk.W)
     
     def save_config():
         """保存配置"""
@@ -656,7 +666,8 @@ def show_settings_window(parent=None):
                 log_level=log_level,
                 frpc_exe_path=frpc_exe_path if frpc_exe_path else '',
                 port_range_min=min_port_int,
-                port_range_max=max_port_int
+                port_range_max=max_port_int,
+                enable_subdomain=enable_subdomain_var.get()
             )
             
             if existing_config:
@@ -689,7 +700,7 @@ def show_settings_window(parent=None):
     
     # 按钮框架
     button_frame = ttk.Frame(frame)
-    button_frame.grid(row=10, column=0, columnspan=2, pady=20)
+    button_frame.grid(row=11, column=0, columnspan=2, pady=20)
     
     # 保存按钮
     save_button = ttk.Button(button_frame, text="保存", command=save_config)

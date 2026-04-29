@@ -334,7 +334,7 @@ class MainWindow:
         # 获取 frpc.exe 路径
         frpc_exe_path = get_frpc_exe_path()
         if not frpc_exe_path or not os.path.exists(frpc_exe_path):
-            messagebox.showerror("错误", "未找到 frpc.exe 文件，请在设置中配置路径")
+            messagebox.showerror("错误", "frpc.exe客户端不存在")
             return
         
         # 检查进程是否已经在运行
